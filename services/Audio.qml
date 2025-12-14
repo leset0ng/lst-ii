@@ -74,7 +74,7 @@ Singleton {
         }
 
         root._rampTarget = clamped;
-        root._rampTimer.restart();
+        _rampTimer.restart();
     }
 
     function toggleMicMute() {
