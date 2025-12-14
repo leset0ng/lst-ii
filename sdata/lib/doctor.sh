@@ -179,6 +179,12 @@ check_manifest() {
 }
 
 check_quickshell_loads() {
+    # Skip if no graphical session
+    if [[ -z "$WAYLAND_DISPLAY" && -z "$DISPLAY" && -z "$NIRI_SOCKET" ]]; then
+        doctor_pass "Quickshell (skipped - no display)"
+        return 0
+    fi
+    
     echo -e "${STY_FAINT}Testing quickshell startup...${STY_RST}"
     
     qs kill -c ii &>/dev/null || true
@@ -186,6 +192,13 @@ check_quickshell_loads() {
     
     local output
     output=$(timeout 5 qs -c ii 2>&1) || true
+    
+    # Check for display/platform errors first
+    if echo "$output" | grep -qE "(could not connect to display|no Qt platform plugin)"; then
+        doctor_fail "Quickshell cannot connect to display"
+        echo -e "    ${STY_FAINT}Run doctor inside your Niri session${STY_RST}"
+        return 1
+    fi
     
     if echo "$output" | grep -q "Configuration Loaded"; then
         doctor_pass "Quickshell loads OK"
@@ -205,6 +218,11 @@ check_quickshell_loads() {
 }
 
 start_shell_if_needed() {
+    # Skip if no graphical session
+    if [[ -z "$WAYLAND_DISPLAY" && -z "$DISPLAY" && -z "$NIRI_SOCKET" ]]; then
+        return 0
+    fi
+    
     # Check if shell is running
     if pgrep -f "qs.*-c.*ii" &>/dev/null; then
         return 0
