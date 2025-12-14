@@ -158,9 +158,24 @@ get_pending_migrations() {
   local pending=()
   
   for migration_id in $(list_available_migrations); do
-    if ! is_migration_applied "$migration_id" && ! is_migration_skipped "$migration_id"; then
-      pending+=("$migration_id")
+    # Skip if already applied or skipped
+    if is_migration_applied "$migration_id" || is_migration_skipped "$migration_id"; then
+      continue
     fi
+    
+    # Load migration and check if it's actually needed
+    load_migration "$migration_id" 2>/dev/null || continue
+    
+    # If migration_check exists and returns false, skip it (already done)
+    if type migration_check &>/dev/null; then
+      if ! migration_check 2>/dev/null; then
+        # Migration not needed - auto-mark as applied
+        mark_migration_applied "$migration_id"
+        continue
+      fi
+    fi
+    
+    pending+=("$migration_id")
   done
   
   echo "${pending[@]}"
@@ -169,9 +184,23 @@ get_pending_migrations() {
 count_pending_migrations() {
   local count=0
   for migration_id in $(list_available_migrations); do
-    if ! is_migration_applied "$migration_id" && ! is_migration_skipped "$migration_id"; then
-      ((count++))
+    # Skip if already applied or skipped
+    if is_migration_applied "$migration_id" || is_migration_skipped "$migration_id"; then
+      continue
     fi
+    
+    # Load migration and check if it's actually needed
+    load_migration "$migration_id" 2>/dev/null || continue
+    
+    # If migration_check exists and returns false, skip it
+    if type migration_check &>/dev/null; then
+      if ! migration_check 2>/dev/null; then
+        mark_migration_applied "$migration_id"
+        continue
+      fi
+    fi
+    
+    ((count++))
   done
   echo "$count"
 }
