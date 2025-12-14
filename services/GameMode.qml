@@ -15,7 +15,7 @@ import qs.services
  * - The focused window covers the full output (fullscreen)
  * 
  * Can also be toggled manually via toggle()/activate()/deactivate()
- * Manual state persists via Persistent.states.gameMode
+ * Manual state persists to file.
  */
 Singleton {
     id: root
@@ -37,6 +37,9 @@ Singleton {
 
     // Fullscreen detection threshold (allow small margin for bar/gaps)
     readonly property int _marginThreshold: 60
+
+    // State file path
+    readonly property string _stateFile: Quickshell.env("HOME") + "/.local/state/quickshell/user/gamemode_active"
 
     // IPC handler for external control
     IpcHandler {
@@ -68,9 +71,11 @@ Singleton {
     }
 
     function _saveState() {
-        if (Persistent.ready) {
-            Persistent.states.gameMode.manualActive = _manualActive
-        }
+        saveProcess.running = true
+    }
+
+    function _loadState() {
+        stateReader.reload()
     }
 
     // Check if a window is fullscreen by comparing to output size
@@ -126,30 +131,36 @@ Singleton {
         }
     }
 
-    // Load state from Persistent when ready
-    Connections {
-        target: Persistent
-        function onReadyChanged() {
-            if (Persistent.ready) {
-                root._manualActive = Persistent.states?.gameMode?.manualActive ?? false
-                console.log("[GameMode] Loaded manual state:", root._manualActive)
-                // Delay initialization to avoid false positives from windows still opening at startup
-                initDelayTimer.start()
+    // State persistence - read
+    FileView {
+        id: stateReader
+        path: Qt.resolvedUrl(root._stateFile)
+
+        onLoaded: {
+            const content = stateReader.text()
+            if (content.trim() === "1") {
+                root._manualActive = true
+                console.log("[GameMode] Restored manual state: active")
+            } else {
+                root._manualActive = false
             }
+            root._initialized = true
+            console.log("[GameMode] Initialized, manual:", root._manualActive)
+        }
+
+        onLoadFailed: (error) => {
+            // File doesn't exist yet, that's fine
+            root._manualActive = false
+            root._initialized = true
+            console.log("[GameMode] Initialized (no saved state)")
         }
     }
 
-    // Delay auto-detection to avoid false positives at startup
-    Timer {
-        id: initDelayTimer
-        interval: 2000 // Wait 2 seconds after startup before enabling auto-detection
-        onTriggered: {
-            root._initialized = true
-            console.log("[GameMode] Initialized (delayed), checking fullscreen...")
-            if (CompositorService.isNiri && root.autoDetect) {
-                root.checkFullscreen()
-            }
-        }
+    // State persistence - write via process
+    Process {
+        id: saveProcess
+        command: ["bash", "-c", "mkdir -p ~/.local/state/quickshell/user && echo " + (root._manualActive ? "1" : "0") + " > " + root._stateFile]
+        onExited: console.log("[GameMode] State saved:", root._manualActive)
     }
 
     // React to window changes
@@ -177,11 +188,21 @@ Singleton {
     // Initial setup
     Component.onCompleted: {
         console.log("[GameMode] Service starting...")
-        // If Persistent is already ready (unlikely but possible), init now
-        if (Persistent.ready) {
-            _manualActive = Persistent.states?.gameMode?.manualActive ?? false
-            _initialized = true
-            console.log("[GameMode] Initialized (immediate), manual:", _manualActive)
+        // Ensure state directory exists and load state
+        Quickshell.execDetached(["mkdir", "-p", Quickshell.env("HOME") + "/.local/state/quickshell/user"])
+        
+        // Load saved state after short delay
+        initTimer.start()
+    }
+
+    Timer {
+        id: initTimer
+        interval: 200
+        onTriggered: {
+            root._loadState()
+            if (CompositorService.isNiri) {
+                root.checkFullscreen()
+            }
         }
     }
 
@@ -194,6 +215,7 @@ Singleton {
         // Use sed to toggle "off" line in animations block
         // If enabling (gamemode off): comment out "off" -> "//off"  
         // If disabling (gamemode on): uncomment "off" -> "off"
+        // The pattern matches indented off///off after "animations {"
         
         niriAnimProcess.command = enabled
             ? ["bash", "-c", "sed -i '/^animations {/,/^}/ s/^\\([ \\t]*\\)off$/\\1\\/\\/off/' " + niriConfigPath + " && niri msg action reload-config"]
@@ -232,5 +254,6 @@ Singleton {
         if (CompositorService.isNiri && controlNiriAnimations) {
             niriAnimDebounce.restart()
         }
+        // Note: Appearance.animationsEnabled reacts to GameMode.active automatically via binding
     }
 }
