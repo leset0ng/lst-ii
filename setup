@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 # ii-niri setup - Simplified installer
-# Commands: install, update, doctor (or TUI if no args)
+# Commands: install, update, doctor, rollback (or TUI if no args)
 
-set -e
 cd "$(dirname "$0")"
 REPO_ROOT="$(pwd)"
+
+# Handle Ctrl+C gracefully
+cleanup() {
+    echo ""
+    echo -e "\033[33mCancelled.\033[0m"
+    rm -rf /tmp/buildyay /tmp/buildparu 2>/dev/null
+    exit 130
+}
+trap cleanup INT
+trap 'rm -rf /tmp/buildyay /tmp/buildparu 2>/dev/null' EXIT TERM
 
 # Load core libraries
 source ./sdata/lib/environment-variables.sh
