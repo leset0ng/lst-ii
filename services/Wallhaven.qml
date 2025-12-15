@@ -207,7 +207,7 @@ QtObject {
     // Reuse global NSFW toggle used by Anime boorus for now
     property bool allowNsfw: Persistent.states?.booru?.allowNsfw ?? false
     // Listing mode: "toplist", "date_added", "random", etc.
-    property string sortingMode: "toplist"
+    property string sortingMode: "date_added"
     // Toplist range when sortingMode == "toplist": 1d, 3d, 1w, 1M, 3M, 6M, 1y
     property string topRange: "1M"
 

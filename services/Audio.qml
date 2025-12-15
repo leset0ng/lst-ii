@@ -101,7 +101,7 @@ Singleton {
         const maxAllowed = (Config.options?.audio?.protection?.maxAllowed ?? 100) / 100;
         const maxCap = protectionEnabled ? Math.min(maxAllowed, root.hardMaxValue) : root.hardMaxValue;
         const newVolume = Math.min(maxCap, currentVolume + step);
-        root.sink.audio.volume = newVolume;
+        root.setSinkVolume(newVolume, true);
     }
     
     function decrementVolume() {
@@ -112,7 +112,7 @@ Singleton {
         const step = protectionEnabled
             ? Math.max(0.005, configuredStep)
             : (currentVolume <= 0.1 ? 0.01 : 0.02);
-        root.sink.audio.volume = Math.max(0, currentVolume - step);
+        root.setSinkVolume(Math.max(0, currentVolume - step), true);
     }
 
     function setDefaultSink(node) {
@@ -184,7 +184,7 @@ Singleton {
                 lastReady = true;
                 return;
             }
-            const maxAllowedIncrease = (Config.options?.audio?.protection?.maxAllowedIncrease ?? 0) / 100;
+            const maxAllowedIncrease = (Config.options?.audio?.protection?.maxAllowedIncrease ?? 2) / 100;
             const epsilon = 0.0005;
             const prev = root._roundVolume(lastVolume);
 
