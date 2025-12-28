@@ -204,6 +204,10 @@ Singleton {
 
     Process {
         id: findCpuMaxFreqProc
+        environment: ({
+            LANG: "C",
+            LC_ALL: "C"
+        })
         command: ["/usr/bin/bash", "-c", "/usr/bin/lscpu | /usr/bin/grep 'CPU max MHz' | /usr/bin/awk '{print $4}'"]
         running: false
         stdout: StdioCollector {
