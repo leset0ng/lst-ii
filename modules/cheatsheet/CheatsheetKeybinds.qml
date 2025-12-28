@@ -11,8 +11,6 @@ import QtQuick.Controls
 StyledFlickable {
     id: root
 
-    readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
-    
     readonly property var keybinds: CompositorService.isNiri ? NiriKeybinds.keybinds : HyprlandKeybinds.keybinds
     readonly property var categories: keybinds?.children ?? []
     property string searchText: ""
@@ -121,7 +119,7 @@ StyledFlickable {
             Layout.fillWidth: true
             Layout.preferredHeight: 200
             radius: Appearance.rounding.normal
-            color: root.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.subSurfaceTransparentize) : Appearance.colors.colLayer1
+            color: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer1
             visible: !root.hasResults && root.searchText.length > 0
 
             CheatsheetNoResults {
@@ -135,7 +133,7 @@ StyledFlickable {
             Layout.fillWidth: true
             Layout.preferredHeight: keybindsColumn.implicitHeight + 16
             radius: Appearance.rounding.normal
-            color: root.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.subSurfaceTransparentize) : Appearance.colors.colLayer1
+            color: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer1
             visible: root.hasResults
 
             Column {

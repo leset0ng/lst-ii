@@ -8,7 +8,6 @@ Item {
     property bool vertical: false
     property real padding: 5
     readonly property bool cardStyleEverywhere: (Config.options?.dock?.cardStyle ?? false) && (Config.options?.sidebar?.cardStyle ?? false) && (Config.options?.bar?.cornerStyle === 3)
-    readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
     implicitWidth: vertical ? Appearance.sizes.baseVerticalBarWidth : (gridLayout.implicitWidth + padding * 2)
     implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : Appearance.sizes.baseBarHeight
     default property alias items: gridLayout.children
@@ -23,7 +22,7 @@ Item {
             rightMargin: root.vertical ? 4 : 0
         }
         color: (Config.options?.bar?.borderless ?? false) ? "transparent"
-            : (root.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.subSurfaceTransparentize) : Appearance.colors.colLayer1)
+            : (Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer1)
         border.width: root.cardStyleEverywhere ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
         radius: root.cardStyleEverywhere ? Appearance.rounding.normal : Appearance.rounding.small

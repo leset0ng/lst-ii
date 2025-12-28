@@ -89,7 +89,7 @@ Scope { // Scope
                         Rectangle { // The real rectangle that is visible / glass plate
                             id: dockVisualBackground
                             property bool cardStyle: Config.options.dock.cardStyle
-                            readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
+                            readonly property bool auroraEverywhere: Appearance.auroraEverywhere
                             readonly property string wallpaperUrl: Wallpapers.effectiveWallpaperUrl
 
                             ColorQuantizer {
@@ -149,7 +149,7 @@ Scope { // Scope
 
                                 Rectangle {
                                     anchors.fill: parent
-                                    color: ColorUtils.transparentize((dockVisualBackground.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0), Appearance.aurora.overlayTransparentize)
+                                    color: ColorUtils.transparentize((dockVisualBackground.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0Base), Appearance.aurora.overlayTransparentize)
                                 }
                             }
                         }

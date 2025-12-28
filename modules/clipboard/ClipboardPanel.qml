@@ -15,8 +15,6 @@ import Quickshell.Io
 Scope {
     id: root
 
-    readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
-
     property int panelWidth: 600
     property int panelMaxHeight: 700
     property string searchText: ""
@@ -246,7 +244,7 @@ Scope {
             anchors.centerIn: parent
             width: panelWidth
             height: Math.min(contentColumn.implicitHeight, panelMaxHeight)
-            color: root.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.popupSurfaceTransparentize) : Appearance.colors.colLayer1
+            color: Appearance.auroraEverywhere ? Appearance.aurora.colPopupSurface : Appearance.colors.colLayer1
             border.width: 1
             border.color: Appearance.colors.colOutlineVariant
             radius: Appearance.rounding.screenRounding

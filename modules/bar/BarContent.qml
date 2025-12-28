@@ -95,7 +95,7 @@ Item { // Bar content region
 
             Rectangle {
                 anchors.fill: parent
-                color: ColorUtils.transparentize((root.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0), (Config.options?.bar?.blurBackground?.overlayOpacity ?? Appearance.aurora.overlayTransparentize))
+                color: ColorUtils.transparentize((root.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0Base), (Config.options?.bar?.blurBackground?.overlayOpacity ?? Appearance.aurora.overlayTransparentize))
             }
         }
     }

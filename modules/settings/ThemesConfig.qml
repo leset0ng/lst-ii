@@ -88,6 +88,7 @@ ContentPage {
                     Config.options.bar.cornerStyle = 3;
                     Config.setNestedValue("bar.blurBackground.enabled", false)
                     Config.options.bar.showBackground = true;
+                    Config.setNestedValue("appearance.transparency.enable", false)
                     return;
                 }
 
@@ -97,6 +98,7 @@ ContentPage {
                     if (Config.options.bar.cornerStyle === 3) Config.options.bar.cornerStyle = 1;
                     Config.options.bar.showBackground = false;
                     Config.setNestedValue("bar.blurBackground.enabled", true)
+                    Config.setNestedValue("appearance.transparency.enable", true)
                     return;
                 }
 
@@ -105,6 +107,7 @@ ContentPage {
                 Config.options.sidebar.cardStyle = false;
                 if (Config.options.bar.cornerStyle === 3) Config.options.bar.cornerStyle = 1;
                 Config.setNestedValue("bar.blurBackground.enabled", false)
+                Config.setNestedValue("appearance.transparency.enable", false)
             }
 
             ConfigSelectionArray {

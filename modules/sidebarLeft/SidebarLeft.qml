@@ -106,7 +106,7 @@ Scope { // Scope
                 width: sidebarRoot.sidebarWidth - Appearance.sizes.hyprlandGapsOut - Appearance.sizes.elevationMargin
                 height: parent.height - Appearance.sizes.hyprlandGapsOut * 2
                 property bool cardStyle: Config.options.sidebar?.cardStyle ?? false
-                readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
+                readonly property bool auroraEverywhere: Appearance.auroraEverywhere
                 readonly property string wallpaperUrl: Wallpapers.effectiveWallpaperUrl
 
                 ColorQuantizer {
@@ -154,7 +154,7 @@ Scope { // Scope
 
                     Rectangle {
                         anchors.fill: parent
-                        color: ColorUtils.transparentize((sidebarLeftBackground.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0), Appearance.aurora.overlayTransparentize)
+                        color: ColorUtils.transparentize((sidebarLeftBackground.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0Base), Appearance.aurora.overlayTransparentize)
                     }
                 }
 

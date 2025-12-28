@@ -34,8 +34,20 @@ Singleton {
         return Math.max(0, Math.min(0.22, y))
     }
     property real autoContentTransparency: 0.9
-    property real backgroundTransparency: Config?.options?.appearance?.transparency?.enable ? Config?.options?.appearance?.transparency?.automatic ? autoBackgroundTransparency : (Config?.options?.appearance?.transparency?.backgroundTransparency ?? 0) : 0
-    property real contentTransparency: Config?.options?.appearance?.transparency?.automatic ? autoContentTransparency : (Config?.options?.appearance?.transparency?.contentTransparency ?? 0)
+    
+    // Transparency - respects enable toggle
+    readonly property bool _transparencyEnabled: Config?.options?.appearance?.transparency?.enable ?? false
+    readonly property bool _transparencyAutomatic: Config?.options?.appearance?.transparency?.automatic ?? true
+    property real backgroundTransparency: _transparencyEnabled 
+        ? (_transparencyAutomatic ? autoBackgroundTransparency : (Config?.options?.appearance?.transparency?.backgroundTransparency ?? 0)) 
+        : 0
+    property real contentTransparency: _transparencyEnabled 
+        ? (_transparencyAutomatic ? autoContentTransparency : (Config?.options?.appearance?.transparency?.contentTransparency ?? 0)) 
+        : 0
+
+    // Global style - centralized aurora detection
+    readonly property string globalStyle: Config?.options?.appearance?.globalStyle ?? "material"
+    readonly property bool auroraEverywhere: globalStyle === "aurora"
 
     // GameMode integration - disable effects/animations when fullscreen detected
     property bool _gameModeActive: GameMode?.active ?? false
@@ -398,18 +410,27 @@ Singleton {
     }
 
     aurora: QtObject {
-        property real overlayTransparentize: {
-            const t = root.contentTransparency
-            return Math.max(0.25, Math.min(0.55, 0.30 + t * 0.30))
-        }
-        property real subSurfaceTransparentize: {
-            const t = root.contentTransparency
-            return Math.max(0.35, Math.min(0.70, 0.50 + t * 0.35))
-        }
-        property real popupSurfaceTransparentize: {
-            const t = root.contentTransparency
-            return Math.max(0.30, Math.min(0.65, 0.45 + t * 0.30))
-        }
+        // Fixed glass effect values for aurora style
+        // These are independent of contentTransparency to ensure consistent glass appearance
+        readonly property real overlayTransparentize: 0.45      // Main panel overlay on blurred wallpaper
+        readonly property real subSurfaceTransparentize: 0.65   // Sub-elements (cards, groups) within panels
+        readonly property real popupSurfaceTransparentize: 0.55 // Popups, toasts, floating elements
+        
+        // Pre-calculated aurora colors using BASE colors (not already-transparent ones)
+        // These avoid double-transparency issues
+        readonly property color colOverlay: ColorUtils.transparentize(root.colors.colLayer0Base, overlayTransparentize)
+        readonly property color colSubSurface: ColorUtils.transparentize(root.colors.colLayer1Base, subSurfaceTransparentize)
+        readonly property color colPopupSurface: ColorUtils.transparentize(root.colors.colLayer1Base, popupSurfaceTransparentize)
+        
+        // Hover/active states for aurora sub-surfaces
+        readonly property color colSubSurfaceHover: ColorUtils.transparentize(
+            ColorUtils.mix(root.colors.colLayer1Base, root.colors.colOnLayer1, 0.92), 
+            subSurfaceTransparentize
+        )
+        readonly property color colSubSurfaceActive: ColorUtils.transparentize(
+            ColorUtils.mix(root.colors.colLayer1Base, root.colors.colOnLayer1, 0.85), 
+            subSurfaceTransparentize
+        )
     }
 
     sizes: QtObject {

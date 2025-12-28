@@ -8,8 +8,6 @@ import qs.modules.common.functions
 
 Item {
     id: root
-
-    readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
     
     property string title: ""
     property string message: ""
@@ -32,7 +30,7 @@ Item {
         width: contentLayout.implicitWidth + 32
         height: contentLayout.implicitHeight + 20
         radius: Appearance.rounding.normal
-        color: root.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.popupSurfaceTransparentize) : Appearance.colors.colLayer1
+        color: Appearance.auroraEverywhere ? Appearance.aurora.colPopupSurface : Appearance.colors.colLayer1
         border.width: 1
         border.color: root.isError ? Appearance.colors.colError : Appearance.colors.colOutlineVariant
         

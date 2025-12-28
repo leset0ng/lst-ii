@@ -7,10 +7,8 @@ Rectangle {
 
     property bool editMode: false
 
-    readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
-
     radius: Appearance.rounding.normal
-    color: root.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.subSurfaceTransparentize) : Appearance.colors.colLayer1
+    color: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer1
 
     signal openAudioOutputDialog()
     signal openAudioInputDialog()

@@ -13,7 +13,6 @@ Item {
     required property var scopeRoot
     property int sidebarPadding: 10
     anchors.fill: parent
-    readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
     property bool aiChatEnabled: (Config.options?.policies?.ai ?? 0) !== 0
     property bool translatorEnabled: (Config.options?.sidebar?.translator?.enable ?? false)
     property bool animeEnabled: (Config.options?.policies?.weeb ?? 0) !== 0
@@ -69,7 +68,7 @@ Item {
             implicitWidth: swipeView.implicitWidth
             implicitHeight: swipeView.implicitHeight
             radius: Appearance.rounding.normal
-            color: root.auroraEverywhere ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.subSurfaceTransparentize) : Appearance.colors.colLayer1
+            color: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer1
 
             SwipeView { // Content pages
                 id: swipeView

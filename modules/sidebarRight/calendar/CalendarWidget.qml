@@ -119,6 +119,7 @@ Item {
                 delegate: CalendarDayButton {
                     day: modelData.label
                     isToday: modelData.today ? 1 : 0
+                    isHeader: true
                     bold: true
                     enabled: false
                 }

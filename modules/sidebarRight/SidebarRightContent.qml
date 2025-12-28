@@ -69,7 +69,7 @@ Item {
         implicitHeight: parent.height - Appearance.sizes.hyprlandGapsOut * 2
         implicitWidth: sidebarWidth - Appearance.sizes.hyprlandGapsOut * 2
         property bool cardStyle: Config.options.sidebar?.cardStyle ?? false
-        readonly property bool auroraEverywhere: (Config.options?.bar?.blurBackground?.enabled ?? false) && !(Config.options?.bar?.showBackground ?? true)
+        readonly property bool auroraEverywhere: Appearance.auroraEverywhere
         readonly property string wallpaperUrl: Wallpapers.effectiveWallpaperUrl
 
         ColorQuantizer {
@@ -117,7 +117,7 @@ Item {
 
             Rectangle {
                 anchors.fill: parent
-                color: ColorUtils.transparentize((sidebarRightBackground.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0), Appearance.aurora.overlayTransparentize)
+                color: ColorUtils.transparentize((sidebarRightBackground.blendedColors?.colLayer0 ?? Appearance.colors.colLayer0Base), Appearance.aurora.overlayTransparentize)
             }
         }
 
@@ -279,7 +279,7 @@ Item {
                 left: parent.left
             }
             color: sidebarRightBackground.auroraEverywhere
-                ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.subSurfaceTransparentize)
+                ? Appearance.aurora.colSubSurface
                 : Appearance.colors.colLayer1
             radius: height / 2
             implicitWidth: uptimeRow.implicitWidth + 24
@@ -316,7 +316,7 @@ Item {
                 right: parent.right
             }
             color: sidebarRightBackground.auroraEverywhere
-                ? ColorUtils.transparentize(Appearance.colors.colLayer1, Appearance.aurora.subSurfaceTransparentize)
+                ? Appearance.aurora.colSubSurface
                 : Appearance.colors.colLayer1
             padding: 4
             spacing: 8  // Increased from default 5 to reduce accidental clicks
