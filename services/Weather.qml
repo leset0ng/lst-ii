@@ -97,8 +97,23 @@ Singleton {
         }
     }
 
+    // Retry timer for when network isn't ready at startup
+    property int _retryCount: 0
+    Timer {
+        id: retryTimer
+        interval: 5000  // 5 seconds between retries
+        repeat: false
+        onTriggered: {
+            if (!root.location.valid && root._retryCount < 3) {
+                root._retryCount++;
+                console.info("[Weather] Retry attempt", root._retryCount);
+                root.getLocation();
+            }
+        }
+    }
+
     onEnabledChanged: {
-        if (enabled && Config.ready) getData();
+        if (enabled && Config.ready) retryTimer.start();
     }
     onUseUSCSChanged: fetchWeather()
 
@@ -106,7 +121,7 @@ Singleton {
         target: Config
         function onReadyChanged() {
             if (Config.ready && root.enabled) {
-                Qt.callLater(() => root.getData());
+                retryTimer.start();
             }
         }
     }
@@ -168,10 +183,20 @@ Singleton {
                         };
                         console.info("[Weather] Location (fallback):", root.location.name);
                         root.fetchWeather();
+                    } else {
+                        // Both methods failed, schedule retry
+                        retryTimer.start();
                     }
                 } catch (e) {
                     console.error("[Weather] Fallback location error:", e.message);
+                    retryTimer.start();
                 }
+            }
+        }
+        onExited: (code) => {
+            // If fallback also fails, schedule retry
+            if (code !== 0 && !root.location.valid) {
+                retryTimer.start();
             }
         }
     }
@@ -212,12 +237,5 @@ Singleton {
         onRunningChanged: {
             if (running) Qt.callLater(() => root.getData())
         }
-    }
-
-    Timer {
-        id: retryTimer
-        interval: 30000
-        repeat: false
-        onTriggered: root.getData()
     }
 }
