@@ -89,14 +89,14 @@ Item {
                 MaterialSymbol {
                     text: "wallpaper"
                     iconSize: Appearance.font.pixelSize.normal
-                    color: Appearance.inirEverywhere ? Appearance.inir.colSubtext : Appearance.colors.colSubtext
+                    color: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary : Appearance.colors.colSubtext
                 }
 
                 StyledText {
                     text: Translation.tr("Wallpapers")
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     font.weight: Font.Medium
-                    color: Appearance.inirEverywhere ? Appearance.inir.colSubtext : Appearance.colors.colSubtext
+                    color: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary : Appearance.colors.colSubtext
                     Layout.fillWidth: true
                 }
 
@@ -121,7 +121,7 @@ Item {
                             anchors.centerIn: parent
                             text: "casino"
                             iconSize: 16
-                            color: Appearance.inirEverywhere ? Appearance.inir.colSubtext : Appearance.colors.colSubtext
+                            color: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary : Appearance.colors.colSubtext
                         }
                     }
                     StyledToolTip { text: Translation.tr("Random wallpaper") }
@@ -144,7 +144,7 @@ Item {
                             anchors.centerIn: parent
                             text: "open_in_full"
                             iconSize: 16
-                            color: Appearance.inirEverywhere ? Appearance.inir.colSubtext : Appearance.colors.colSubtext
+                            color: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary : Appearance.colors.colSubtext
                         }
                     }
                     StyledToolTip { text: Translation.tr("Open wallpaper selector") }
@@ -161,7 +161,7 @@ Item {
                     maskSource: Rectangle {
                         width: carousel.width
                         height: carousel.height
-                        radius: Appearance.rounding.small
+                        radius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.small
                     }
                 }
 
@@ -227,7 +227,7 @@ Item {
                         Rectangle {
                             id: thumb
                             anchors.fill: parent
-                            radius: Appearance.rounding.small
+                            radius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.small
                             color: Appearance.inirEverywhere ? Appearance.inir.colLayer2 : Appearance.colors.colLayer2
 
                             layer.enabled: true
@@ -264,8 +264,8 @@ Item {
                                 anchors.centerIn: parent
                                 width: 28
                                 height: 28
-                                radius: 14
-                                color: Appearance.colors.colPrimary
+                                radius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : 14
+                                color: Appearance.inirEverywhere ? Appearance.inir.colPrimary : Appearance.colors.colPrimary
                                 visible: wallpaperDelegate.isCurrentWallpaper
                                 scale: wallpaperDelegate.isCurrentWallpaper ? 1 : 0
 
@@ -275,7 +275,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: "check"
                                     iconSize: 18
-                                    color: Appearance.colors.colOnPrimary
+                                    color: Appearance.inirEverywhere ? Appearance.inir.colOnPrimary : Appearance.colors.colOnPrimary
                                 }
                             }
 

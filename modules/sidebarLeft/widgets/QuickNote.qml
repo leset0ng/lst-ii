@@ -25,17 +25,17 @@ Item {
         }
     }
 
-    StyledRectangularShadow { target: card; visible: !Appearance.auroraEverywhere }
+    StyledRectangularShadow { target: card; visible: !Appearance.inirEverywhere && !Appearance.auroraEverywhere }
 
     Rectangle {
         id: card
         anchors.fill: parent
         implicitHeight: col.implicitHeight + 16
-        radius: Appearance.rounding.normal
+        radius: Appearance.inirEverywhere ? Appearance.inir.roundingNormal : Appearance.rounding.normal
         color: Appearance.inirEverywhere ? Appearance.inir.colLayer1
              : Appearance.auroraEverywhere ? "transparent" 
              : Appearance.colors.colLayer1
-        border.width: Appearance.auroraEverywhere ? 0 : 1
+        border.width: Appearance.inirEverywhere ? 1 : (Appearance.auroraEverywhere ? 0 : 1)
         border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder : Appearance.colors.colLayer0Border
 
         ColumnLayout {
@@ -51,24 +51,26 @@ Item {
                 MaterialSymbol {
                     text: "edit_note"
                     iconSize: 16
-                    color: Appearance.colors.colOnLayer1
+                    color: Appearance.inirEverywhere ? Appearance.inir.colText : Appearance.colors.colOnLayer1
                 }
 
                 StyledText {
                     text: Translation.tr("Quick Note")
                     font.pixelSize: Appearance.font.pixelSize.small
                     font.weight: Font.Medium
-                    color: Appearance.colors.colOnLayer1
+                    color: Appearance.inirEverywhere ? Appearance.inir.colText : Appearance.colors.colOnLayer1
                 }
 
                 Item { Layout.fillWidth: true }
 
                 RippleButton {
                     implicitWidth: 24; implicitHeight: 24
-                    buttonRadius: Appearance.rounding.full
+                    buttonRadius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.full
                     colBackground: "transparent"
-                    colBackgroundHover: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer2Hover
-                    colRipple: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurfaceActive : Appearance.colors.colLayer2Active
+                    colBackgroundHover: Appearance.inirEverywhere ? Appearance.inir.colLayer2Hover
+                        : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer2Hover
+                    colRipple: Appearance.inirEverywhere ? Appearance.inir.colLayer2Active
+                        : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurfaceActive : Appearance.colors.colLayer2Active
                     opacity: Notepad.text.trim() !== "" ? 1 : 0
                     visible: opacity > 0
                     onClicked: Notepad.setTextValue("")
@@ -83,7 +85,7 @@ Item {
                             anchors.centerIn: parent
                             text: "delete_outline"
                             iconSize: 14
-                            color: Appearance.colors.colSubtext
+                            color: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary : Appearance.colors.colSubtext
                         }
                     }
 
@@ -94,10 +96,12 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.min(120, Math.max(60, textArea.implicitHeight + 12))
-                radius: Appearance.rounding.small
-                color: root.editing ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2
-                border.width: root.editing ? 2 : 0
-                border.color: Appearance.colors.colPrimary
+                radius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.small
+                color: Appearance.inirEverywhere 
+                    ? (root.editing ? Appearance.inir.colLayer2Hover : Appearance.inir.colLayer2)
+                    : (root.editing ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2)
+                border.width: Appearance.inirEverywhere ? 1 : (root.editing ? 2 : 0)
+                border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder : Appearance.colors.colPrimary
 
                 Behavior on color {
                     enabled: Appearance.animationsEnabled
@@ -118,8 +122,8 @@ Item {
                         wrapMode: TextEdit.Wrap
                         font.pixelSize: Appearance.font.pixelSize.small
                         font.family: Appearance.font.family.main
-                        color: Appearance.colors.colOnLayer2
-                        placeholderTextColor: Appearance.colors.colOutline
+                        color: Appearance.inirEverywhere ? Appearance.inir.colText : Appearance.colors.colOnLayer2
+                        placeholderTextColor: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary : Appearance.colors.colOutline
                         background: null
                         padding: 0
 
