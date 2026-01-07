@@ -41,7 +41,7 @@ apply_term() {
     sed -i "s/${colorlist[$i]} #/${colorvalues[$i]#\#}/g" "$STATE_DIR"/user/generated/terminal/sequences.txt
   done
 
-  sed -i "s/\$alpha/$term_alpha/g" "$STATE_DIR/user/generated/terminal/sequences.txt"
+  sed -i "s/\$alpha/$term_alpha/g" "$STATE_DIR"/user/generated/terminal/sequences.txt
 
   for file in /dev/pts/*; do
     if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then
@@ -50,6 +50,47 @@ apply_term() {
       } & disown || true
     fi
   done
+}
+
+apply_terminal_configs() {
+  # Generate terminal-specific config files (Kitty, Alacritty, Foot, WezTerm, Ghostty, Konsole)
+  if [ ! -f "$STATE_DIR/user/generated/material_colors.scss" ]; then
+    echo "material_colors.scss not found. Skipping terminal config generation."
+    return
+  fi
+  
+  # Get enabled terminals from config
+  local enabled_terminals=()
+  if [ -f "$CONFIG_FILE" ]; then
+    # Check which terminal config generators are enabled
+    local enable_kitty=$(jq -r '.appearance.wallpaperTheming.terminals.kitty // true' "$CONFIG_FILE")
+    local enable_alacritty=$(jq -r '.appearance.wallpaperTheming.terminals.alacritty // true' "$CONFIG_FILE")
+    local enable_foot=$(jq -r '.appearance.wallpaperTheming.terminals.foot // true' "$CONFIG_FILE")
+    local enable_wezterm=$(jq -r '.appearance.wallpaperTheming.terminals.wezterm // true' "$CONFIG_FILE")
+    local enable_ghostty=$(jq -r '.appearance.wallpaperTheming.terminals.ghostty // true' "$CONFIG_FILE")
+    local enable_konsole=$(jq -r '.appearance.wallpaperTheming.terminals.konsole // true' "$CONFIG_FILE")
+    
+    [[ "$enable_kitty" == "true" ]] && enabled_terminals+=(kitty)
+    [[ "$enable_alacritty" == "true" ]] && enabled_terminals+=(alacritty)
+    [[ "$enable_foot" == "true" ]] && enabled_terminals+=(foot)
+    [[ "$enable_wezterm" == "true" ]] && enabled_terminals+=(wezterm)
+    [[ "$enable_ghostty" == "true" ]] && enabled_terminals+=(ghostty)
+    [[ "$enable_konsole" == "true" ]] && enabled_terminals+=(konsole)
+  else
+    # Default: enable all
+    enabled_terminals=(kitty alacritty foot wezterm ghostty konsole)
+  fi
+  
+  if [ ${#enabled_terminals[@]} -eq 0 ]; then
+    return
+  fi
+  
+  # Run the Python script to generate configs
+  if command -v python3 &>/dev/null; then
+    python3 "$SCRIPT_DIR/generate_terminal_configs.py" \
+      --scss "$STATE_DIR/user/generated/material_colors.scss" \
+      --terminals "${enabled_terminals[@]}" &>/dev/null &
+  fi
 }
 
 apply_qt() {
@@ -85,10 +126,12 @@ if [ -f "$CONFIG_FILE" ]; then
   enable_terminal=$(jq -r '.appearance.wallpaperTheming.enableTerminal' "$CONFIG_FILE")
   if [ "$enable_terminal" = "true" ]; then
     apply_term &
+    apply_terminal_configs &
   fi
 else
   echo "Config file not found at $CONFIG_FILE. Applying terminal theming by default."
   apply_term &
+  apply_terminal_configs &
 fi
 
 # apply_qt & # Qt theming is already handled by kde-material-colors
