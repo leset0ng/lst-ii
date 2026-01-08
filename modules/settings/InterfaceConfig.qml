@@ -1319,17 +1319,45 @@ ContentPage {
                     }
                 }
 
-                ConfigRow {
-                    icon: "play_circle"
-                    text: Translation.tr("Watch site")
-                    StyledToolTip {
-                        text: Translation.tr("Custom streaming site URL. Use %s for search query.\nExample: https://hianime.to/search?keyword=%s")
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    MaterialSymbol {
+                        text: "play_circle"
+                        iconSize: Appearance.font.pixelSize.larger
+                        color: Appearance.colors.colOnLayer1
                     }
-                    MaterialTextField {
-                        Layout.preferredWidth: 200
-                        placeholderText: "https://hianime.to/search?keyword=%s"
-                        text: Config.options.sidebar?.animeSchedule?.watchSite ?? ""
-                        onTextEdited: Config.setNestedValue("sidebar.animeSchedule.watchSite", text)
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        StyledText {
+                            text: Translation.tr("Watch site")
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            color: Appearance.colors.colOnLayer1
+                        }
+
+                        TextField {
+                            Layout.fillWidth: true
+                            placeholderText: "https://hianime.to/search?keyword=%s"
+                            text: Config.options.sidebar?.animeSchedule?.watchSite ?? ""
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            color: Appearance.m3colors.m3onSurface
+                            placeholderTextColor: Appearance.colors.colSubtext
+                            background: Rectangle {
+                                color: Appearance.colors.colLayer1
+                                radius: Appearance.rounding.small
+                                border.width: parent.activeFocus ? 2 : 1
+                                border.color: parent.activeFocus ? Appearance.colors.colPrimary : Appearance.colors.colLayer0Border
+                            }
+                            onTextEdited: Config.setNestedValue("sidebar.animeSchedule.watchSite", text)
+
+                            StyledToolTip {
+                                text: Translation.tr("Custom streaming site URL. Use %s for search query.")
+                            }
+                        }
                     }
                 }
             }
