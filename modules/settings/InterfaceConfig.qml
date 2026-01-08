@@ -1318,6 +1318,20 @@ ContentPage {
                         text: Translation.tr("Include adult-rated anime in results")
                     }
                 }
+
+                ConfigRow {
+                    icon: "play_circle"
+                    text: Translation.tr("Watch site")
+                    StyledToolTip {
+                        text: Translation.tr("Custom streaming site URL. Use %s for search query.\nExample: https://hianime.to/search?keyword=%s")
+                    }
+                    MaterialTextField {
+                        Layout.preferredWidth: 200
+                        placeholderText: "https://hianime.to/search?keyword=%s"
+                        text: Config.options.sidebar?.animeSchedule?.watchSite ?? ""
+                        onTextEdited: Config.setNestedValue("sidebar.animeSchedule.watchSite", text)
+                    }
+                }
             }
 
             ContentSubsection {

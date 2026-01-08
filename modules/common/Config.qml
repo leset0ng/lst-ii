@@ -806,12 +806,13 @@ Singleton {
                     // Optional API key for NSFW & user-specific filters
                     property string apiKey: ""
                 }
-                // Anime Schedule tab - Jikan API (MyAnimeList)
+                // Anime Schedule tab - AniList API
                 property JsonObject animeSchedule: JsonObject {
-                    // Enable/disable the Anime Schedule tab
                     property bool enable: false
-                    // Filter out NSFW content
                     property bool showNsfw: false
+                    // Custom streaming site URL (use %s for search query placeholder)
+                    // Examples: "https://hianime.to/search?keyword=%s", "https://9animetv.to/search?keyword=%s"
+                    property string watchSite: ""
                 }
                 // Reddit tab - public JSON API
                 property JsonObject reddit: JsonObject {
