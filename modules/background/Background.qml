@@ -233,8 +233,9 @@ Variants {
                     visible: opacity > 0 && !blurLoader.active && !bgRoot.backdropActive && !bgRoot.wallpaperIsGif
                     opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo && !bgRoot.wallpaperIsGif) ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.InOutQuad } }
-                    cache: false
-                    smooth: false
+                    cache: true
+                    smooth: true
+                    mipmap: true
                     source: bgRoot.wallpaperSafetyTriggered ? "" : bgRoot.wallpaperPath
                     fillMode: bgRoot.fillMode === "fit" ? Image.PreserveAspectFit
                             : bgRoot.fillMode === "tile" ? Image.Tile

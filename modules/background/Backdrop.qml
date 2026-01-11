@@ -82,6 +82,8 @@ Variants {
                     : ""
                 asynchronous: true
                 cache: true
+                smooth: true
+                mipmap: true
                 visible: !backdropWindow.useAuroraStyle
 
                 layer.enabled: Appearance.effectsEnabled && backdropWindow.backdropBlurRadius > 0 && !backdropWindow.useAuroraStyle
@@ -102,6 +104,8 @@ Variants {
                 source: wallpaper.source
                 asynchronous: true
                 cache: true
+                smooth: true
+                mipmap: true
                 visible: backdropWindow.useAuroraStyle && status === Image.Ready
 
                 layer.enabled: Appearance.effectsEnabled
