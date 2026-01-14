@@ -29,8 +29,10 @@ function setup_user_groups(){
 function setup_systemd_services(){
   echo -e "${STY_BLUE}Setting up systemd services...${STY_RST}"
   
-  if [[ -z $(systemctl --version 2>/dev/null) ]]; then
-    log_warning "systemctl not found, skipping service setup"
+  # Check if systemd is available
+  if ! command -v systemctl &>/dev/null || [[ ! -d /run/systemd/system ]]; then
+    log_warning "systemd not available, skipping service setup"
+    log_info "If using a non-systemd init (runit, openrc, etc.), configure services manually"
     return 0
   fi
   

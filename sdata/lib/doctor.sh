@@ -30,42 +30,81 @@ doctor_fix() {
 
 check_dependencies() {
     local missing=()
+    local missing_cmds=()
+    
+    # Commands to check (command:friendly_name)
+    # These are distro-agnostic - we check for the command, not the package
     local cmds=(
-        "qs:quickshell-git"
-        "niri:niri"
-        "nmcli:networkmanager"
-        "wpctl:wireplumber"
+        "qs:Quickshell"
+        "niri:Niri"
+        "nmcli:NetworkManager"
+        "wpctl:WirePlumber"
         "jq:jq"
-        "matugen:matugen-bin"
+        "matugen:matugen"
         "wlsunset:wlsunset"
         "dunstify:dunst"
         "fish:fish"
-        "easyeffects:easyeffects"
-        "magick:imagemagick"
-        "uv:uv"
+        "magick:ImageMagick"
         "swaylock:swaylock"
-        "cava:cava"
         "grim:grim"
-        "qalc:libqalculate"
         "mpv:mpv"
-        "yt-dlp:yt-dlp"
-        "blueman-manager:blueman"
-        "kwriteconfig6:kconfig"
     )
     
+    # Optional but recommended
+    local optional_cmds=(
+        "easyeffects:EasyEffects"
+        "uv:uv"
+        "cava:cava"
+        "qalc:qalculate"
+        "yt-dlp:yt-dlp"
+        "blueman-manager:Blueman"
+        "kwriteconfig6:KConfig"
+    )
+    
+    # Check required commands
     for item in "${cmds[@]}"; do
         local cmd="${item%%:*}"
-        local pkg="${item##*:}"
-        command -v "$cmd" &>/dev/null || missing+=("$pkg")
+        local name="${item##*:}"
+        if ! command -v "$cmd" &>/dev/null; then
+            missing+=("$name")
+            missing_cmds+=("$cmd")
+        fi
+    done
+    
+    # Check optional commands (warn but don't fail)
+    local optional_missing=()
+    for item in "${optional_cmds[@]}"; do
+        local cmd="${item%%:*}"
+        local name="${item##*:}"
+        command -v "$cmd" &>/dev/null || optional_missing+=("$name")
     done
     
     if [[ ${#missing[@]} -eq 0 ]]; then
         doctor_missing_deps=()
-        doctor_pass "All required commands available"
+        if [[ ${#optional_missing[@]} -gt 0 ]]; then
+            doctor_pass "Required commands OK (optional missing: ${optional_missing[*]})"
+        else
+            doctor_pass "All required commands available"
+        fi
     else
         doctor_missing_deps=("${missing[@]}")
         doctor_fail "Missing: ${missing[*]}"
-        echo -e "    ${STY_FAINT}Run: yay -S ${missing[*]}${STY_RST}"
+        
+        # Provide distro-specific install hints
+        case "${OS_GROUP_ID:-unknown}" in
+            arch)
+                echo -e "    ${STY_FAINT}Run: yay -S ${missing_cmds[*]}${STY_RST}"
+                ;;
+            fedora)
+                echo -e "    ${STY_FAINT}Run: sudo dnf install ... (see ./setup install)${STY_RST}"
+                ;;
+            debian|ubuntu)
+                echo -e "    ${STY_FAINT}Run: sudo apt install ... (see ./setup install)${STY_RST}"
+                ;;
+            *)
+                echo -e "    ${STY_FAINT}Install these tools using your package manager${STY_RST}"
+                ;;
+        esac
     fi
 }
 
@@ -273,14 +312,20 @@ run_doctor_with_fixes() {
 
     if [[ ${#doctor_missing_deps[@]} -gt 0 ]]; then
         detect_distro
-        if [[ "$OS_GROUP_ID" == "arch" ]]; then
-            if ! $ask || tui_confirm "Install missing dependencies now?"; then
-                SKIP_SYSUPDATE=true
-                ONLY_MISSING_DEPS="${doctor_missing_deps[*]}"
-                source ./sdata/subcmd-install/1.deps-router.sh
-                check_dependencies
-            fi
-        fi
+        case "$OS_GROUP_ID" in
+            arch|fedora|debian|ubuntu)
+                if ! $ask || tui_confirm "Install missing dependencies now?"; then
+                    SKIP_SYSUPDATE=true
+                    ONLY_MISSING_DEPS="${doctor_missing_deps[*]}"
+                    source ./sdata/subcmd-install/1.deps-router.sh
+                    check_dependencies
+                fi
+                ;;
+            *)
+                echo -e "${STY_YELLOW}Automatic dependency installation not available for ${OS_GROUP_ID}.${STY_RST}"
+                echo -e "${STY_YELLOW}Please install missing dependencies manually.${STY_RST}"
+                ;;
+        esac
     fi
     
     tui_step 2 10 "Checking critical files"
