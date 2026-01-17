@@ -227,10 +227,29 @@ Singleton {
     }
 
     // Playback control
+    // History for Previous button (like standard media players)
+    property var playHistory: []
+    readonly property int maxHistorySize: 50
+    
+    function _addToHistory(videoId): void {
+        if (!videoId) return
+        // Don't add duplicates if it's the same as the last entry
+        if (root.playHistory.length > 0 && root.playHistory[root.playHistory.length - 1] === videoId) return
+        let history = [...root.playHistory, videoId]
+        if (history.length > root.maxHistorySize) {
+            history = history.slice(-root.maxHistorySize)
+        }
+        root.playHistory = history
+    }
+    
     function play(item): void {
         if (!item?.videoId || !root.available) return
         root.error = ""
         root.loading = true
+        
+        // Fade out other players before starting
+        _fadeOutOtherPlayers()
+        
         root.currentTitle = item.title || ""
         root.currentArtist = item.artist || ""
         root.currentVideoId = item.videoId || ""
@@ -239,9 +258,26 @@ Singleton {
         root.currentDuration = item.duration || 0
         root.currentPosition = 0
         
+        // Add to history for Previous button
+        _addToHistory(item.videoId)
+        
         _stopProc.running = true
         _playUrl = root.currentUrl
         _playDelayTimer.restart()
+    }
+    
+    // Fade out other MPRIS players when starting YtMusic
+    function _fadeOutOtherPlayers(): void {
+        for (const player of Mpris.players.values) {
+            // Skip YtMusic's own mpv player
+            if (player === root._mpvPlayer) continue
+            
+            // Pause other playing media
+            if (player.isPlaying && player.canPause) {
+                console.log("[YtMusic] Pausing other player:", player.identity)
+                player.pause()
+            }
+        }
     }
 
     function playFromSearch(index): void {
@@ -366,17 +402,27 @@ Singleton {
     }
     
     function playPrevious(): void {
+        // Standard media player behavior:
         // If more than 3 seconds in, restart current track
         if (root.currentPosition > 3) {
             seek(0)
             return
         }
         
-        // Otherwise try to play previous from search results
-        if (root.searchResults.length > 0) {
-            const currentIdx = root.searchResults.findIndex(r => r.videoId === root.currentVideoId)
-            if (currentIdx > 0) {
-                play(root.searchResults[currentIdx - 1])
+        // If less than 3 seconds, go to previous track from history
+        if (root.playHistory.length >= 2) {
+            // Get previous track (second to last in history)
+            const prevVideoId = root.playHistory[root.playHistory.length - 2]
+            // Remove current track from history (will be re-added when playing)
+            root.playHistory = root.playHistory.slice(0, -1)
+            
+            // Find the track in search results, queue, or liked songs
+            let prevTrack = root.searchResults.find(r => r.videoId === prevVideoId)
+            if (!prevTrack) prevTrack = root.queue.find(r => r.videoId === prevVideoId)
+            if (!prevTrack) prevTrack = root.likedSongs.find(r => r.videoId === prevVideoId)
+            
+            if (prevTrack) {
+                play(prevTrack)
                 return
             }
         }
@@ -680,13 +726,18 @@ Singleton {
             onRead: line => {
                 const parts = line.split("|")
                 if (parts.length >= 3) {
-                    _fetchLikedProc.newLiked.push({
-                        title: parts[0],
-                        artist: parts[1],
-                        videoId: parts[2],
-                        duration: parseFloat(parts[3] || "0"),
-                        thumbnail: root._getThumbnailUrl(parts[2])
-                    })
+                    const duration = parseFloat(parts[3] || "0")
+                    // Filter out videos longer than 15 minutes (likely not music)
+                    // Also filter out items with 0 duration (live streams, unavailable videos)
+                    if (duration > 0 && duration <= 900) {
+                        _fetchLikedProc.newLiked.push({
+                            title: parts[0],
+                            artist: parts[1],
+                            videoId: parts[2],
+                            duration: duration,
+                            thumbnail: root._getThumbnailUrl(parts[2])
+                        })
+                    }
                 }
             }
         }
@@ -1079,13 +1130,12 @@ Singleton {
         id: _playProc
         command: ["/usr/bin/mpv",
             "--no-video",
-            "--really-quiet",
             "--input-ipc-server=" + root.ipcSocket,
             "--script=/usr/lib/mpv-mpris/mpris.so",
             "--force-media-title=" + root.currentTitle + (root.currentArtist ? " - " + root.currentArtist : ""),
             "--metadata-codepage=utf-8",
-            "--script-opts=ytdl_hook-ytdl_path=yt-dlp",
-            ...(root.googleConnected && root._mpvCookiesFile ? ["--ytdl-raw-options=cookies=" + root._mpvCookiesFile] : []),
+            "--script-opts=ytdl_hook-ytdl_path=yt-dlp,mpris-identity=YtMusic",
+            ...(root.googleConnected && root._mpvCookiesFile ? ["--cookies-file=" + root._mpvCookiesFile] : []),
             root._playUrl
         ]
         onRunningChanged: {

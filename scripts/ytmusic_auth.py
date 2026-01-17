@@ -18,7 +18,10 @@ def get_base_dir():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def get_cookie_output_path():
-    return os.path.join(get_base_dir(), "yt-cookies.txt")
+    xdg_config = os.environ.get("XDG_CONFIG_HOME")
+    if not xdg_config:
+        xdg_config = os.path.expanduser("~/.config")
+    return os.path.join(xdg_config, "illogical-impulse", "yt-cookies.txt")
 
 # Firefox forks that use the same cookie format
 FIREFOX_FORKS = {
@@ -215,6 +218,8 @@ def main():
 
     browser = sys.argv[1].lower()
     output_path = get_cookie_output_path()
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     # 1. Try direct extraction
     success, error = extract_cookies(browser, output_path)

@@ -19,8 +19,8 @@ Item {
     visible: hasPlayer
 
     property MprisPlayer player: MprisController.activePlayer
-    // Hide when YtMusic is active to avoid duplicate widgets (YtMusicPlayerCard handles that)
-    readonly property bool hasPlayer: player && player.trackTitle && !MprisController.isYtMusicActive
+    // Show for all players (YtMusicPlayerCard is separate in YtMusicView)
+    readonly property bool hasPlayer: player && player.trackTitle
     property string artDownloadLocation: Directories.coverArt
     property string artFileName: player?.trackArtUrl ? Qt.md5(player.trackArtUrl) : ""
     property string artFilePath: artFileName ? `${artDownloadLocation}/${artFileName}` : ""
