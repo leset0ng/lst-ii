@@ -89,7 +89,7 @@ QuickToggleModel {
     Process {
         id: fetchActiveState
         running: false
-        command: [root.warpCliPath, "status"]
+        command: ["/bin/sh", "-c", root.warpCliPath + " status"]
 
         stdout: StdioCollector {
             id: warpStatusCollector

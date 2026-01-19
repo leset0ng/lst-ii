@@ -30,17 +30,18 @@ Singleton {
         Quickshell.execDetached(["/usr/bin/qs", "-p", root.welcomeQmlPath])
     }
 
-    FileView {
-        id: firstRunFileView
-        path: Qt.resolvedUrl(firstRunFilePath)
-        onLoadFailed: (error) => {
-            if (error == FileViewError.FileNotFound) {
-                // Ensure parent directory exists
+    Process {
+        id: checkFirstRunProc
+        command: ["/usr/bin/test", "-f", root.firstRunFilePath]
+        onExited: (exitCode) => {
+            if (exitCode !== 0) {
+                // File doesn't exist, create it and run setup
                 const parentDir = root.firstRunFilePath.substring(0, root.firstRunFilePath.lastIndexOf('/'))
-                Process.exec(["/usr/bin/mkdir", "-p", parentDir])
-                firstRunFileView.setText(root.firstRunFileContent)
+                Quickshell.execDetached(["/bin/sh", "-c", `mkdir -p "${parentDir}" && echo "${root.firstRunFileContent}" > "${root.firstRunFilePath}"`])
                 root.handleFirstRun()
             }
         }
     }
+
+    Component.onCompleted: checkFirstRunProc.running = true
 }
