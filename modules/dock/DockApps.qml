@@ -34,6 +34,12 @@ Item {
     
     property var dockItems: []
     
+    // Watch for changes to separatePinnedFromRunning
+    property bool separatePinnedFromRunning: Config.options?.dock?.separatePinnedFromRunning ?? true
+    onSeparatePinnedFromRunningChanged: {
+        root.rebuildDockItems()
+    }
+    
     // Cache compiled regexes - only recompile when config changes
     property var _cachedIgnoredRegexes: []
     property var _lastIgnoredRegexStrings: []
@@ -53,7 +59,7 @@ Item {
     function rebuildDockItems() {
         const pinnedApps = Config.options?.dock?.pinnedApps ?? [];
         const ignoredRegexes = _getIgnoredRegexes();
-        const separatePinnedFromRunning = Config.options?.dock?.separatePinnedFromRunning ?? true;
+        const separatePinnedFromRunning = root.separatePinnedFromRunning;
 
         // Get all open windows
         const allToplevels = CompositorService.sortedToplevels && CompositorService.sortedToplevels.length
