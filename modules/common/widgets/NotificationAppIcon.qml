@@ -30,7 +30,8 @@ MaterialShape { // App icon
     color: isUrgent ? Appearance.colors.colPrimaryContainer : "transparent"
     Loader {
         id: materialSymbolLoader
-        active: root.appIcon == ""
+        // Only show MaterialSymbol when there's no appIcon AND no image
+        active: root.appIcon == "" && root.image == ""
         anchors.fill: parent
         sourceComponent: MaterialSymbol {
             text: {

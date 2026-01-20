@@ -18,7 +18,7 @@ Item { // Notification item area
     property real summaryElideRatio: 0.85
 
     property real dragConfirmThreshold: 70 // Drag to discard notification
-    property real dismissOvershoot: notificationIcon.implicitWidth + 20 // Account for gaps and bouncy animations
+    property real dismissOvershoot: 58 // Account for gaps and bouncy animations (was notificationIcon.implicitWidth + 20)
     property var qmlParent: root?.parent?.parent // There's something between this and the parent ListView
     property var parentDragIndex: qmlParent?.dragIndex ?? -1
     property var parentDragDistance: qmlParent?.dragDistance ?? 0
@@ -93,20 +93,8 @@ Item { // Notification item area
         }
     }
 
-    NotificationAppIcon { // App icon
-        id: notificationIcon
-        opacity: (!onlyNotification && notificationObject.image != "" && expanded) ? 1 : 0
-        visible: opacity > 0
-
-        Behavior on opacity {
-            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-        }
-
-        image: notificationObject.image
-        anchors.right: background.left
-        anchors.top: background.top
-        anchors.rightMargin: 10
-    }
+    // Note: App icon for expanded notifications with images is now handled by NotificationAppIcon
+    // within the image itself (small corner icon) - no separate icon needed here to avoid duplication
 
     Rectangle { // Background of notification item
         id: background
