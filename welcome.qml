@@ -604,25 +604,29 @@ Scope {
             }
         }
 
-        // Wallpaper - Inline picker
+        // Wallpaper - Inline picker (like QuickWallpaper widget)
         SettingsGroup {
+            id: wallpaperGroup
             Layout.fillWidth: true
             Layout.maximumWidth: 560
             Layout.alignment: Qt.AlignHCenter
 
             property var wallpapersList: []
-            property string wallpapersPath: `${FileUtils.trimFileProtocol(Directories.pictures)}/Wallpapers`
+            readonly property string wallpapersPath: `${FileUtils.trimFileProtocol(Directories.pictures)}/Wallpapers`
+            readonly property real itemWidth: 130
+            readonly property real itemHeight: 78
 
             Component.onCompleted: wallpaperScanProc.running = true
 
             Process {
                 id: wallpaperScanProc
-                command: ["/usr/bin/find", parent.wallpapersPath, "-maxdepth", "1", "-type", "f", "-iregex", ".*\\.(jpg|jpeg|png|webp|avif)$"]
+                command: ["/usr/bin/fish", "-c", `find '${wallpaperGroup.wallpapersPath}' -maxdepth 1 -type f \\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.avif' \\) -printf '%C@\\t%p\\n'`]
                 stdout: SplitParser {
                     splitMarker: ""
                     onRead: data => {
                         const lines = data.trim().split("\n").filter(l => l.length > 0)
-                        parent.parent.wallpapersList = lines
+                        lines.sort((a, b) => parseFloat(b.split("\t")[0]) - parseFloat(a.split("\t")[0]))
+                        wallpaperGroup.wallpapersList = lines.map(l => l.split("\t")[1]).filter(p => p && p.length > 0)
                     }
                 }
             }
@@ -643,63 +647,115 @@ Scope {
                     }
                 }
 
-                // Inline wallpaper grid
-                Rectangle {
+                // Carousel like QuickWallpaper widget
+                Item {
                     Layout.fillWidth: true
-                    implicitHeight: 110
-                    radius: Appearance.rounding.small
-                    color: Appearance.colors.colLayer2
-                    clip: true
+                    Layout.preferredHeight: wallpaperGroup.itemHeight + 16
+                    visible: wallpaperGroup.wallpapersList.length > 0
 
-                    Flickable {
-                        id: wallpaperFlickable
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Appearance.rounding.small
+                        color: Appearance.colors.colLayer2
+                    }
+
+                    ListView {
+                        id: wallpaperCarousel
                         anchors.fill: parent
                         anchors.margins: 8
-                        contentWidth: wallpaperRow.width
-                        flickableDirection: Flickable.HorizontalFlick
+                        orientation: ListView.Horizontal
+                        spacing: 8
+                        clip: true
                         boundsBehavior: Flickable.StopAtBounds
+                        model: wallpaperGroup.wallpapersList
 
-                        Row {
-                            id: wallpaperRow
-                            spacing: 8
+                        WheelHandler {
+                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                            onWheel: event => {
+                                const delta = event.angleDelta.y !== 0 ? event.angleDelta.y : event.angleDelta.x
+                                wallpaperCarousel.contentX = Math.max(0, Math.min(
+                                    wallpaperCarousel.contentWidth - wallpaperCarousel.width,
+                                    wallpaperCarousel.contentX - delta
+                                ))
+                            }
+                        }
 
-                            Repeater {
-                                model: parent.parent.parent.parent.wallpapersList
+                        delegate: Item {
+                            id: wpDelegate
+                            required property int index
+                            required property string modelData
+                            readonly property string filePath: modelData
+                            readonly property bool isCurrentWallpaper: (Config.options?.background?.wallpaperPath ?? "") === filePath
+                            readonly property bool isHovered: wpMouseArea.containsMouse
 
-                                Rectangle {
-                                    required property string modelData
-                                    width: 140
-                                    height: 90
-                                    radius: Appearance.rounding.small
-                                    color: Appearance.colors.colLayer3
-                                    border.width: Config.options?.background?.wallpaperPath === modelData ? 3 : 0
-                                    border.color: Appearance.colors.colPrimary
+                            width: wallpaperGroup.itemWidth
+                            height: wallpaperGroup.itemHeight
 
-                                    Image {
-                                        anchors.fill: parent
-                                        anchors.margins: 2
-                                        source: Qt.resolvedUrl(modelData)
-                                        fillMode: Image.PreserveAspectCrop
-                                        asynchronous: true
-                                        sourceSize.width: 280
-                                        sourceSize.height: 180
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: Appearance.rounding.small
+                                color: "transparent"
+                                border.width: wpDelegate.isCurrentWallpaper ? 2 : 0
+                                border.color: Appearance.colors.colPrimary
+                                z: 2
+                            }
 
-                                        layer.enabled: true
-                                        layer.effect: OpacityMask {
-                                            maskSource: Rectangle {
-                                                width: 136; height: 86
-                                                radius: Appearance.rounding.small - 2
-                                            }
+                            Rectangle {
+                                id: wpThumb
+                                anchors.fill: parent
+                                radius: Appearance.rounding.small
+                                color: Appearance.colors.colLayer3
+                                clip: true
+
+                                Image {
+                                    anchors.fill: parent
+                                    source: wpDelegate.filePath ? `file://${wpDelegate.filePath}` : ""
+                                    fillMode: Image.PreserveAspectCrop
+                                    asynchronous: true
+                                    cache: false
+                                    sourceSize.width: wallpaperGroup.itemWidth * 2
+                                    sourceSize.height: wallpaperGroup.itemHeight * 2
+
+                                    layer.enabled: true
+                                    layer.effect: OpacityMask {
+                                        maskSource: Rectangle {
+                                            width: wpThumb.width
+                                            height: wpThumb.height
+                                            radius: wpThumb.radius
                                         }
                                     }
+                                }
 
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            Config.setNestedValue("background.wallpaperPath", modelData)
-                                            MaterialThemeLoader.generateFromWallpaper(modelData)
-                                        }
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: parent.radius
+                                    color: wpDelegate.isHovered && !wpDelegate.isCurrentWallpaper ? "#50000000" : "transparent"
+                                }
+
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    width: 28; height: 28
+                                    radius: 14
+                                    color: Appearance.colors.colPrimary
+                                    visible: wpDelegate.isCurrentWallpaper
+                                    scale: wpDelegate.isCurrentWallpaper ? 1 : 0
+                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+
+                                    MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: "check"
+                                        iconSize: 18
+                                        color: Appearance.colors.colOnPrimary
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: wpMouseArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        Wallpapers.select(wpDelegate.filePath)
                                     }
                                 }
                             }
@@ -707,14 +763,35 @@ Scope {
                     }
                 }
 
-                // Fallback button for custom selection
+                // Empty state
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: wallpaperGroup.itemHeight + 16
+                    visible: wallpaperGroup.wallpapersList.length === 0
+                    radius: Appearance.rounding.small
+                    color: Appearance.colors.colLayer2
+
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        MaterialSymbol { Layout.alignment: Qt.AlignHCenter; text: "image"; iconSize: 24; color: Appearance.colors.colSubtext }
+                        StyledText {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: Translation.tr("No wallpapers found in ~/Pictures/Wallpapers")
+                            color: Appearance.colors.colSubtext
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                        }
+                    }
+                }
+
+                // Browse button
                 RippleButton {
                     Layout.fillWidth: true
                     implicitHeight: 36
                     buttonRadius: Appearance.rounding.small
                     colBackground: Appearance.colors.colLayer2
                     colBackgroundHover: Appearance.colors.colLayer2Hover
-                    onClicked: Quickshell.execDetached([Directories.wallpaperSwitchScriptPath])
+                    onClicked: GlobalStates.wallpaperSelectorOpen = true
 
                     RowLayout {
                         anchors.centerIn: parent
