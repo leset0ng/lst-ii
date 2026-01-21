@@ -151,9 +151,7 @@ Scope {
                     spacing: 8
 
                     Repeater {
-                        model: ScriptModel {
-                            values: root.meaningfulPlayers
-                        }
+                        model: root.meaningfulPlayers
                         delegate: PlayerControl {
                             required property MprisPlayer modelData
                             required property int index

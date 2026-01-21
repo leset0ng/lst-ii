@@ -127,15 +127,35 @@ Rectangle {
                 maskSource: previewMask
             }
 
-            // Dark fade at bottom
-            Rectangle {
+            // Dark fade at bottom (masked to match preview corners)
+            Item {
+                id: fadeContainer
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 height: 32
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: "transparent" }
-                    GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.4) }
+
+                Rectangle {
+                    id: fadeMask
+                    anchors.fill: parent
+                    radius: root.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.small
+                    visible: false
+                }
+
+                Rectangle {
+                    id: fadeRect
+                    anchors.fill: parent
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: "transparent" }
+                        GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.4) }
+                    }
+                    visible: false
+                }
+
+                GE.OpacityMask {
+                    anchors.fill: parent
+                    source: fadeRect
+                    maskSource: fadeMask
                 }
             }
         }
