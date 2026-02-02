@@ -836,17 +836,21 @@ Singleton {
     readonly property string _cookiesFilePath: Directories.config + "/yt-cookies.txt"
     readonly property var _firefoxForks: ["zen", "librewolf", "floorp", "waterfox"]
 
-    readonly property string _cookieArgStr: root.customCookiesPath
+    readonly property string _cookieArgStr: (root.customCookiesPath
         ? ("--cookies '" + root.customCookiesPath + "'")
         : (_firefoxForks.includes(root.googleBrowser)
             ? ("--cookies '" + root._cookiesFilePath + "'")
-            : ("--cookies-from-browser " + root.googleBrowser))
+            : ("--cookies-from-browser " + root.googleBrowser))) + " --js-runtimes node --remote-components ejs:github"
 
-    property var _cookieArgs: root.customCookiesPath
-        ? ["--cookies", root.customCookiesPath]
-        : (_firefoxForks.includes(root.googleBrowser)
-            ? ["--cookies", root._cookiesFilePath]
-            : ["--cookies-from-browser", root.googleBrowser])
+    property var _cookieArgs: [
+        ...(root.customCookiesPath
+            ? ["--cookies", root.customCookiesPath]
+            : (_firefoxForks.includes(root.googleBrowser)
+                ? ["--cookies", root._cookiesFilePath]
+                : ["--cookies-from-browser", root.googleBrowser])),
+        "--js-runtimes", "node",
+        "--remote-components", "ejs:github"
+    ]
 
     readonly property string _mpvCookiesFile: root.customCookiesPath
         ? root.customCookiesPath
@@ -967,8 +971,13 @@ Singleton {
     }
 
     function _checkGoogleConnection(): void {
-        if (!root.available) return
+        if (!root.available) {
+            root.googleError = Translation.tr("yt-dlp not available")
+            root.googleChecking = false
+            return
+        }
         root.googleChecking = true
+        root.googleError = ""
         _googleCheckProc.running = true
     }
 
@@ -1036,7 +1045,7 @@ Singleton {
                 root.googleConnected = false
                 const err = errorOutput.toLowerCase()
                 if (err.includes("playlist does not exist") || err.includes("sign in") || err.includes("403")) {
-                    root.googleError = Translation.tr("Not logged in. Sign in to YouTube in %1, then try again.").arg(root.getBrowserDisplayName(root.googleBrowser))
+                    root.googleError = Translation.tr("Not logged in. Sign in to music.youtube.com in %1, then try again.").arg(root.getBrowserDisplayName(root.googleBrowser))
                 } else if (err.includes("cookies") || err.includes("browser") || err.includes("keyring")) {
                     root.googleError = Translation.tr("Could not read cookies. Close %1 and try again.").arg(root.getBrowserDisplayName(root.googleBrowser))
                 } else if (err.includes("network") || err.includes("connection") || err.includes("unable to download")) {
@@ -1140,9 +1149,13 @@ Singleton {
             "--cache=yes",
             "--cache-secs=30",
             "--script-opts=ytdl_hook-ytdl_path=yt-dlp",
-            ...(root.googleConnected && root._mpvCookiesFile ? ["--cookies-file=" + root._mpvCookiesFile] : []),
+            ...(root.googleConnected && root._mpvCookiesFile ? [
+                "--ytdl-raw-options=cookies=" + root._mpvCookiesFile + ",js-runtimes=node,remote-components=ejs:github",
+                "--cookies-file=" + root._mpvCookiesFile
+            ] : []),
             root._playUrl
         ]
+
         onRunningChanged: {
             if (running) {
                 root.loading = false

@@ -18,10 +18,14 @@ def get_base_dir():
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def get_cookie_output_path():
+    """Get path for storing extracted cookies."""
     xdg_config = os.environ.get("XDG_CONFIG_HOME")
     if not xdg_config:
         xdg_config = os.path.expanduser("~/.config")
-    return os.path.join(xdg_config, "illogical-impulse", "yt-cookies.txt")
+    # Use illogical-impulse directory as per project convention
+    config_dir = os.path.join(xdg_config, "illogical-impulse")
+    os.makedirs(config_dir, exist_ok=True)
+    return os.path.join(config_dir, "yt-cookies.txt")
 
 # Firefox forks that use the same cookie format
 FIREFOX_FORKS = {
@@ -41,13 +45,24 @@ def find_firefox_profile(base_path):
     if not os.path.exists(base):
         return None
 
-    # Priority: *.default-release, *.default, *Default*, any with cookies.sqlite
-    patterns = ["*.default-release", "*.default", "*Default*", "*"]
+    # Priority: *.default-release, *.default, any with cookies.sqlite
+    # Skip backup directories
+    patterns = ["*.default-release", "*.default"]
     for pattern in patterns:
         matches = glob.glob(os.path.join(base, pattern))
         for match in matches:
-            if os.path.isdir(match) and os.path.exists(os.path.join(match, "cookies.sqlite")):
-                return match
+            if os.path.isdir(match) and not match.endswith("-backup"):
+                cookies_path = os.path.join(match, "cookies.sqlite")
+                if os.path.exists(cookies_path):
+                    return match
+
+    # Fallback: any directory with cookies.sqlite (not backup)
+    for item in os.listdir(base):
+        item_path = os.path.join(base, item)
+        if os.path.isdir(item_path) and not item.endswith("-backup") and not item == "Crash Reports":
+            cookies_path = os.path.join(item_path, "cookies.sqlite")
+            if os.path.exists(cookies_path):
+                return item_path
     return None
 
 def find_chrome_profile(browser_name="google-chrome"):

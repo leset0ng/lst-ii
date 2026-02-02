@@ -16,10 +16,13 @@ AGENTS.md
 **/AGENTS.md
 CLAUDE.md
 **/CLAUDE.md
-prompts/
+prompts/    
 .continue/
 context-architect/
 inir-docs/
+.gemini/
+GEMINI.md
+opencode.json
 
 # WIP documentation (not for distribution)
 docs/*_IMPLEMENTATION.md
@@ -80,3 +83,4 @@ debug_*.py
 Thumbs.db
 *.desktop.bak
 .orchids/
+.aider*

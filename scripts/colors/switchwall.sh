@@ -154,10 +154,34 @@ start_mpvpaper_for_all_outputs() {
         return 1
     fi
 
-    for output in $outputs; do
-        mpvpaper -o "$VIDEO_OPTS" "$output" "$video_path" &
-        sleep 0.1
-    done
+    # Create a detached launcher script to ensure mpvpaper survives parent termination
+    local launcher_script="$RESTORE_SCRIPT_DIR/.mpvpaper_launcher_$$.sh"
+    cat > "$launcher_script" << 'LAUNCHER_EOF'
+#!/bin/bash
+video_path="$1"
+shift
+outputs="$@"
+VIDEO_OPTS="no-audio loop hwdec=auto scale=bilinear interpolation=no video-sync=display-resample panscan=1.0 video-scale-x=1.0 video-scale-y=1.0 video-align-x=0.5 video-align-y=0.5 load-scripts=no"
+for output in $outputs; do
+    nohup mpvpaper -o "$VIDEO_OPTS" "$output" "$video_path" > /dev/null 2>&1 &
+    disown
+    sleep 0.2
+done
+LAUNCHER_EOF
+    chmod +x "$launcher_script"
+    
+    # Execute launcher in a completely detached way using at if available, otherwise nohup
+    if command -v at >/dev/null 2>&1; then
+        echo "$launcher_script '$video_path' $outputs" | at now 2>/dev/null
+    else
+        (nohup "$launcher_script" "$video_path" $outputs > /dev/null 2>&1 &)
+    fi
+    
+    # Small delay to let the launcher start
+    sleep 0.3
+    
+    # Clean up launcher script after a delay
+    (sleep 5 && rm -f "$launcher_script") &
 }
 
 create_restore_script() {
@@ -197,6 +221,13 @@ set_thumbnail_path() {
     local path="$1"
     if [ -f "$SHELL_CONFIG_FILE" ]; then
         jq --arg path "$path" '.background.thumbnailPath = $path' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
+    fi
+}
+
+set_backdrop_thumbnail_path() {
+    local path="$1"
+    if [ -f "$SHELL_CONFIG_FILE" ]; then
+        jq --arg path "$path" '.background.backdrop.thumbnailPath = $path' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
     fi
 }
 
@@ -248,54 +279,46 @@ switch() {
         if is_video "$imgpath"; then
             mkdir -p "$THUMBNAIL_DIR"
 
-            missing_deps=()
-            if ! command -v mpvpaper &> /dev/null; then
-                missing_deps+=("mpvpaper")
-            fi
+            # Only check for ffmpeg (needed for thumbnail generation)
+            # mpvpaper is no longer needed - Qt Multimedia handles video playback natively
             if ! command -v ffmpeg &> /dev/null; then
-                missing_deps+=("ffmpeg")
-            fi
-            if [ ${#missing_deps[@]} -gt 0 ]; then
-                echo "Missing deps: ${missing_deps[*]}"
-                echo "Arch: sudo pacman -S ${missing_deps[*]}"
+                echo "Missing dependency: ffmpeg"
+                echo "Arch: sudo pacman -S ffmpeg"
                 action=$(notify-send \
                     -a "Wallpaper switcher" \
                     -c "im.error" \
                     -A "install_arch=Install (Arch)" \
                     "Can't switch to video wallpaper" \
-                    "Missing dependencies: ${missing_deps[*]}")
+                    "Missing dependency: ffmpeg (needed for thumbnail generation)")
                 if [[ "$action" == "install_arch" ]]; then
-                    kitty -1 sudo pacman -S "${missing_deps[*]}"
-                    if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then
+                    kitty -1 sudo pacman -S ffmpeg
+                    if command -v ffmpeg &>/dev/null; then
                         notify-send 'Wallpaper switcher' 'Alright, try again!' -a "Wallpaper switcher"
                     fi
                 fi
                 exit 0
             fi
 
-            # Set wallpaper path
-            set_wallpaper_path "$imgpath"
-
-            # Set video wallpaper (Niri o Hyprland)
-            local video_path="$imgpath"
-            start_mpvpaper_for_all_outputs "$video_path" || echo "[switchwall.sh] Failed to start mpvpaper for video wallpaper" >&2
-
-            # Extract first frame for color generation
+            # Extract first frame for thumbnail (used for color generation)
             thumbnail="$THUMBNAIL_DIR/$(basename "$imgpath").jpg"
             ffmpeg -y -i "$imgpath" -vframes 1 "$thumbnail" 2>/dev/null
 
-            # Set thumbnail path
-            set_thumbnail_path "$thumbnail"
-
-            if [ -f "$thumbnail" ]; then
-                matugen_args=(image "$thumbnail")
-                generate_colors_material_args=(--path "$thumbnail")
-                create_restore_script "$video_path"
-            else
-                echo "Cannot create image to colorgen"
+            if [ ! -f "$thumbnail" ]; then
+                echo "Cannot create thumbnail for color generation"
                 remove_restore
                 exit 1
             fi
+
+            # Set wallpaper path (Qt Multimedia Video component will handle playback)
+            set_wallpaper_path "$imgpath"
+            
+            # Set thumbnail path (used for color generation and as fallback)
+            set_thumbnail_path "$thumbnail"
+
+            # Use thumbnail for color generation
+            matugen_args=(image "$thumbnail")
+            generate_colors_material_args=(--path "$thumbnail")
+            create_restore_script "$imgpath"
         else
             matugen_args=(image "$imgpath")
             generate_colors_material_args=(--path "$imgpath")

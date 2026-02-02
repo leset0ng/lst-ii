@@ -191,8 +191,33 @@ Singleton {
 		// Update grace period for valid players
 		_updateGrace(player);
 		
-		// Filter very short media (< 5 seconds) - likely GIFs
-		if (player.length > 0 && player.length < 5) return false;
+		// Enhanced GIF/short media detection
+		const trackUrl = player.metadata?.["xesam:url"] ?? "";
+		const trackLength = player.length ?? 0;
+		
+		// Filter very short media (< 5 seconds) - likely GIFs or ads
+		if (trackLength > 0 && trackLength < 5) return false;
+		
+		// Filter known GIF/image hosting patterns
+		if (trackUrl) {
+			const urlLower = trackUrl.toLowerCase();
+			// Common GIF/image hosts
+			if (urlLower.includes("giphy.com")) return false;
+			if (urlLower.includes("tenor.com")) return false;
+			if (urlLower.includes("imgur.com") && (urlLower.endsWith(".gif") || urlLower.endsWith(".gifv"))) return false;
+			if (urlLower.includes("gfycat.com")) return false;
+			if (urlLower.includes("redgifs.com")) return false;
+			// Twitter/X embedded media (often auto-playing videos)
+			if (urlLower.includes("video.twimg.com") && trackLength < 30) return false;
+			if (urlLower.includes("pbs.twimg.com")) return false;
+		}
+		
+		// Filter browser players with very short content (likely embedded videos/GIFs)
+		const isBrowserPlayer = name.includes("firefox") || name.includes("chrome") || name.includes("chromium") || 
+		                        name.includes("brave") || name.includes("vivaldi") || name.includes("opera");
+		if (isBrowserPlayer && trackLength > 0 && trackLength < 15 && !trackUrl.includes("youtube.com") && !trackUrl.includes("youtu.be")) {
+			return false;
+		}
 		
 		return true;
 	}
@@ -229,10 +254,17 @@ Singleton {
 	function _isYtMusicRelated(player): bool {
 		if (!player) return false;
 		if (_isYtMusicMpv(player)) return true;
-		// Also check browser players showing YouTube content when YtMusic is active
+		// Only consider browser YouTube players as YtMusic-related if titles match closely
 		if (!YtMusic.currentVideoId && !YtMusic.currentTitle) return false;
 		const trackUrl = player.metadata?.["xesam:url"] ?? "";
-		return trackUrl.includes("youtube.com") || trackUrl.includes("youtu.be");
+		const isYouTube = trackUrl.includes("youtube.com") || trackUrl.includes("youtu.be");
+		if (!isYouTube) return false;
+		// Check if titles match (same video playing in browser and YtMusic)
+		const ytTitle = _normTitle(YtMusic.currentTitle);
+		const pTitle = _normTitle(player.trackTitle);
+		if (!ytTitle || !pTitle) return false;
+		// Consider related if titles are very similar (one contains the other)
+		return pTitle.includes(ytTitle) || ytTitle.includes(pTitle);
 	}
 	
 	// Filter YtMusic duplicates - keep only one YtMusic-related player
@@ -446,6 +478,17 @@ Singleton {
 		}
 
 		this.trackedPlayer = targetPlayer;
+	}
+
+	// Sanitize art URL to prevent invalid URLs from breaking image loading
+	function sanitizeArtUrl(url): string {
+		if (!url) return "";
+		const urlStr = url.toString();
+		// Filter out data URIs that are too large (can cause crashes)
+		if (urlStr.startsWith("data:") && urlStr.length > 100000) return "";
+		// Filter out invalid protocols
+		if (urlStr.startsWith("file://") && !urlStr.includes("/tmp/") && !urlStr.includes("/cache/")) return "";
+		return urlStr;
 	}
 
 	IpcHandler {

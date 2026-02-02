@@ -389,6 +389,7 @@ Singleton {
                     property JsonObject mediaControls: JsonObject {
                         property bool enable: false
                         property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"
+                        property string playerPreset: "full" // "full", "compact", "minimal", "albumart", "visualizer", "classic"
                         property real x: 240
                         property real y: 240
                     }
@@ -410,6 +411,8 @@ Singleton {
                     property bool hideWallpaper: false
                     property bool useMainWallpaper: true
                     property string wallpaperPath: ""
+                    property string thumbnailPath: "" // Thumbnail for animated wallpapers (video/gif)
+                    property bool enableAnimation: false // Enable animated wallpapers (video/gif) in backdrop (disabled by default for performance)
                     property int blurRadius: 32
                     property int dim: 35 // 0-100
                     property real saturation: 1.0
@@ -723,6 +726,7 @@ Singleton {
             property JsonObject altSwitcher: JsonObject {
                 // Preset style: "default" (sidebar) or "list" (centered list)
                 property string preset: "default"
+                property bool noVisualUi: false
                 // Whether to tint app icons (monochrome), similar to dock/workspaces
                 property bool monochromeIcons: false
                 // Enable/disable slide in/out animation
@@ -1053,6 +1057,7 @@ Singleton {
                 }
                 property JsonObject altSwitcher: JsonObject {
                     property string preset: "thumbnails"
+                    property bool noVisualUi: false
                     property bool autoHide: true
                     property int autoHideDelayMs: 500
                     property bool closeOnFocus: true
@@ -1064,6 +1069,7 @@ Singleton {
                 }
                 property JsonObject background: JsonObject {
                     property string wallpaperPath: "" // Empty = use main wallpaper
+                    property string thumbnailPath: "" // Thumbnail for animated wallpapers (video/gif)
                     property bool useMainWallpaper: true
                     property JsonObject effects: JsonObject {
                         property bool enableBlur: false
@@ -1077,6 +1083,8 @@ Singleton {
                         property bool hideWallpaper: false
                         property bool useMainWallpaper: true
                         property string wallpaperPath: ""
+                        property string thumbnailPath: "" // Thumbnail for animated wallpapers (video/gif)
+                        property bool enableAnimation: false // Enable animated wallpapers (video/gif) in backdrop (disabled by default for performance)
                         property int blurRadius: 32
                         property int dim: 35
                         property real saturation: 1.0

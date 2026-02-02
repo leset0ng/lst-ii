@@ -21,8 +21,10 @@ from tqdm import tqdm
 GNOME_DESKTOP_AVAILABLE = False
 try:
     import gi
+
     gi.require_version("GnomeDesktop", "4.0")
     from gi.repository import Gio, GnomeDesktop
+
     GNOME_DESKTOP_AVAILABLE = True
     thumbnail_size_map = {
         "normal": GnomeDesktop.DesktopThumbnailSize.NORMAL,
@@ -117,7 +119,14 @@ def make_thumbnail(fpath: str) -> bool:
 
 
 @logger.catch()
-def thumbnail_folder(*, dir_path: Path, workers: int, only_images: bool, recursive: bool, machine_progress: bool = False) -> None:
+def thumbnail_folder(
+    *,
+    dir_path: Path,
+    workers: int,
+    only_images: bool,
+    recursive: bool,
+    machine_progress: bool = False,
+) -> None:
     all_files = get_all_files(dir_path=dir_path, recursive=recursive)
     if only_images:
         all_files = get_all_images(all_files=all_files)
@@ -128,7 +137,7 @@ def thumbnail_folder(*, dir_path: Path, workers: int, only_images: bool, recursi
         with Pool(processes=workers) as p:
             for result in p.imap(make_thumbnail, all_files):
                 completed += 1
-                print(f"PROGRESS {completed}/{total} FILE {all_files[completed-1]}")
+                print(f"PROGRESS {completed}/{total} FILE {all_files[completed - 1]}")
                 sys.stdout.flush()
     else:
         with Pool(processes=workers) as p:
@@ -136,37 +145,81 @@ def thumbnail_folder(*, dir_path: Path, workers: int, only_images: bool, recursi
 
 
 def get_all_images(*, all_files: List[Path]) -> List[Path]:
-    img_suffixes = [".jpg", ".jpeg", ".png", ".gif"]
-    all_images = [fpath for fpath in all_files if fpath.suffix in img_suffixes]
-    print("Found {} images".format(len(all_images)))
+    img_suffixes = [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".mp4",
+        ".webm",
+        ".mkv",
+        ".avi",
+        ".mov",
+    ]
+    all_images = [fpath for fpath in all_files if fpath.suffix.lower() in img_suffixes]
+    print("Found {} images/videos".format(len(all_images)))
     return all_images
 
 
 def get_all_files(*, dir_path: Path, recursive: bool) -> List[Path]:
     if not (dir_path.exists() and dir_path.is_dir()):
-        raise ValueError("{} doesn't exist or isn't a valid directory!".format(dir_path.resolve()))
+        raise ValueError(
+            "{} doesn't exist or isn't a valid directory!".format(dir_path.resolve())
+        )
     if recursive:
         all_files = dir_path.rglob("*")
     else:
         all_files = dir_path.glob("*")
     all_files = [fpath for fpath in all_files if fpath.is_file()]
-    print("Found {} files in the directory: {}".format(len(all_files), dir_path.resolve()))
+    print(
+        "Found {} files in the directory: {}".format(len(all_files), dir_path.resolve())
+    )
     return all_files
+
 
 @click.command()
 @click.option(
-    "-d", "--img_dirs", required=True, help='directories to generate thumbnails seperated by space, eg: "dir1/dir2 dir3"'
+    "-d",
+    "--img_dirs",
+    required=True,
+    help='directories to generate thumbnails seperated by space, eg: "dir1/dir2 dir3"',
 )
 @click.option(
-    "-s", "--size", default="normal", type=click.Choice(["normal", "large", "x-large", "xx-large"]), help="Thumbnail size: normal, large, x-large, xx-large"
+    "-s",
+    "--size",
+    default="normal",
+    type=click.Choice(["normal", "large", "x-large", "xx-large"]),
+    help="Thumbnail size: normal, large, x-large, xx-large",
 )
 @click.option("-w", "--workers", default=1, help="no of cpus to use for processing")
 @click.option(
-    "-i", "--only_images", is_flag=True, default=False, help="Whether to only look for images to be thumbnailed"
+    "-i",
+    "--only_images",
+    is_flag=True,
+    default=False,
+    help="Whether to only look for images to be thumbnailed",
 )
-@click.option("-r", "--recursive", is_flag=True, default=False, help="Whether to recursively look for files")
-@click.option("--machine_progress", is_flag=True, default=False, help="Print machine-readable progress lines instead of a progress bar")
-def main(img_dirs: str, size: str, workers: str, only_images: bool, recursive: bool, machine_progress: bool) -> None:
+@click.option(
+    "-r",
+    "--recursive",
+    is_flag=True,
+    default=False,
+    help="Whether to recursively look for files",
+)
+@click.option(
+    "--machine_progress",
+    is_flag=True,
+    default=False,
+    help="Print machine-readable progress lines instead of a progress bar",
+)
+def main(
+    img_dirs: str,
+    size: str,
+    workers: str,
+    only_images: bool,
+    recursive: bool,
+    machine_progress: bool,
+) -> None:
     img_dirs = [Path(img_dir) for img_dir in img_dirs.split()]
     global factory, current_size
     current_size = size
@@ -178,7 +231,13 @@ def main(img_dirs: str, size: str, workers: str, only_images: bool, recursive: b
         factory = None
 
     for img_dir in img_dirs:
-        thumbnail_folder(dir_path=img_dir, workers=workers, only_images=only_images, recursive=recursive, machine_progress=machine_progress)
+        thumbnail_folder(
+            dir_path=img_dir,
+            workers=workers,
+            only_images=only_images,
+            recursive=recursive,
+            machine_progress=machine_progress,
+        )
     print("Thumbnail Generation Completed!")
 
 

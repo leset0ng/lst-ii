@@ -6,7 +6,7 @@ import qs.services
 import qs
 import qs.modules.common.functions
 import qs.modules.background.widgets
-import qs.modules.mediaControls
+import qs.modules.mediaControls.presets
 
 import QtQuick
 import QtQuick.Layouts
@@ -40,6 +40,51 @@ AbstractBackgroundWidget {
     property list<real> visualizerPoints: cavaProcess.points
 
     readonly property point widgetScreenPos: root.mapToItem(null, 0, 0)
+    
+    // Get selected preset component
+    readonly property string selectedPreset: Config.options?.background?.widgets?.mediaControls?.playerPreset ?? "full"
+    readonly property Component presetComponent: {
+        switch (selectedPreset) {
+            case "compact": return compactPlayerComponent
+            case "minimal": return minimalPlayerComponent
+            case "albumart": return albumArtPlayerComponent
+            case "visualizer": return visualizerPlayerComponent
+            case "classic": return classicPlayerComponent
+            case "full":
+            default: return fullPlayerComponent
+        }
+    }
+    
+    // Preset components
+    Component {
+        id: fullPlayerComponent
+        FullPlayer {}
+    }
+    
+    Component {
+        id: compactPlayerComponent
+        CompactPlayer {}
+    }
+    
+    Component {
+        id: minimalPlayerComponent
+        MinimalPlayer {}
+    }
+    
+    Component {
+        id: albumArtPlayerComponent
+        AlbumArtPlayer {}
+    }
+    
+    Component {
+        id: visualizerPlayerComponent
+        VisualizerPlayer {}
+    }
+    
+    Component {
+        id: classicPlayerComponent
+        ClassicPlayer {}
+    }
 
     ColumnLayout {
         id: playerColumnLayout
@@ -50,15 +95,19 @@ AbstractBackgroundWidget {
             model: ScriptModel {
                 values: root.meaningfulPlayers
             }
-            delegate: PlayerControl {
+            delegate: Loader {
                 required property MprisPlayer modelData
-                player: modelData
-                visualizerPoints: root.visualizerPoints
-                implicitWidth: root.widgetWidth
-                implicitHeight: root.widgetHeight
-                radius: root.popupRounding
-                screenX: root.widgetScreenPos.x
-                screenY: root.widgetScreenPos.y
+                sourceComponent: root.presetComponent
+                Layout.preferredWidth: root.widgetWidth
+                Layout.preferredHeight: root.widgetHeight
+                
+                onLoaded: {
+                    item.player = modelData
+                    item.visualizerPoints = Qt.binding(() => root.visualizerPoints)
+                    item.radius = root.popupRounding
+                    item.screenX = Qt.binding(() => root.widgetScreenPos.x)
+                    item.screenY = Qt.binding(() => root.widgetScreenPos.y)
+                }
             }
         }
 

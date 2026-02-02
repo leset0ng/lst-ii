@@ -9,6 +9,7 @@ import qs.modules.common.functions as CF
 import QtQuick
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -62,7 +63,7 @@ Variants {
         readonly property string wallpaperThumbnailPath: bgRoot.backgroundOptions.thumbnailPath ?? bgRoot.wallpaperPathRaw
         property bool wallpaperIsVideo: wallpaperPathRaw.endsWith(".mp4") || wallpaperPathRaw.endsWith(".webm") || wallpaperPathRaw.endsWith(".mkv") || wallpaperPathRaw.endsWith(".avi") || wallpaperPathRaw.endsWith(".mov")
         property bool wallpaperIsGif: wallpaperPathRaw.toLowerCase().endsWith(".gif")
-        property string wallpaperPath: wallpaperIsVideo ? bgRoot.wallpaperThumbnailPath : bgRoot.wallpaperPathRaw
+        property string wallpaperPath: bgRoot.wallpaperPathRaw
         property bool wallpaperSafetyTriggered: {
             const enabled = bgRoot.workSafetyEnableOptions.wallpaper ?? false;
             const fileKeywords = bgRoot.workSafetyTriggerOptions.fileKeywords ?? [];
@@ -171,11 +172,21 @@ Variants {
             stdout: StdioCollector {
                 id: wallpaperSizeOutputCollector
                 onStreamFinished: {
-                    const output = wallpaperSizeOutputCollector.text;
-                    const [width, height] = output.split(" ").map(Number);
-                    const [screenWidth, screenHeight] = [bgRoot.screen.width, bgRoot.screen.height];
-                    bgRoot.wallpaperWidth = width;
-                    bgRoot.wallpaperHeight = height;
+                    const output = (wallpaperSizeOutputCollector.text ?? "").trim();
+                    const parts = output.split(/\s+/).filter(Boolean);
+                    const width = Number(parts[0]);
+                    const height = Number(parts[1]);
+                    const screenWidth = bgRoot.screen?.width ?? 0;
+                    const screenHeight = bgRoot.screen?.height ?? 0;
+
+                    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0 || screenWidth <= 0 || screenHeight <= 0) {
+                        console.warn("[Background] Failed to parse wallpaper size:", output);
+                        return;
+                    }
+
+                    bgRoot.wallpaperWidth = Math.round(width);
+                    bgRoot.wallpaperHeight = Math.round(height);
+
                     if (width <= screenWidth || height <= screenHeight) {
                         bgRoot.effectiveWallpaperScale = Math.max(screenWidth / width, screenHeight / height);
                     } else {
@@ -192,7 +203,7 @@ Variants {
             // Wallpaper container - used as reference for blur and widgets
             Item {
                 id: wallpaperContainer
-                property int chunkSize: Config?.options.bar.workspaces.shown ?? 10
+                property int chunkSize: Config?.options?.bar?.workspaces?.shown ?? 10
                 property int lower: Math.floor(bgRoot.firstWorkspaceId / chunkSize) * chunkSize
                 property int upper: Math.ceil(bgRoot.lastWorkspaceId / chunkSize) * chunkSize
                 property int range: upper - lower
@@ -218,7 +229,7 @@ Variants {
                 property real effectiveValueX: Math.max(0, Math.min(1, valueX))
                 property real effectiveValueY: Math.max(0, Math.min(1, valueY))
                 
-                readonly property bool useParallax: bgRoot.fillMode === "fill" && !bgRoot.wallpaperIsGif
+                readonly property bool useParallax: bgRoot.fillMode === "fill" && !bgRoot.wallpaperIsGif && !bgRoot.wallpaperIsVideo
                 x: useParallax ? (-(bgRoot.movableXSpace) - (effectiveValueX - 0.5) * 2 * bgRoot.movableXSpace) : 0
                 y: useParallax ? (-(bgRoot.movableYSpace) - (effectiveValueY - 0.5) * 2 * bgRoot.movableYSpace) : 0
                 Behavior on x { NumberAnimation { duration: wallpaperContainer.useParallax ? 600 : 0; easing.type: Easing.OutCubic } }
@@ -226,11 +237,11 @@ Variants {
                 width: useParallax ? (bgRoot.wallpaperWidth / bgRoot.wallpaperToScreenRatio * bgRoot.effectiveWallpaperScale) : bgRoot.screen.width
                 height: useParallax ? (bgRoot.wallpaperHeight / bgRoot.wallpaperToScreenRatio * bgRoot.effectiveWallpaperScale) : bgRoot.screen.height
 
-                // Static wallpaper (non-GIF images)
+                // Static wallpaper (non-GIF, non-video images)
                 StyledImage {
                     id: wallpaper
                     anchors.fill: parent
-                    visible: opacity > 0 && !blurLoader.active && !bgRoot.backdropActive && !bgRoot.wallpaperIsGif
+                    visible: opacity > 0 && !blurLoader.active && !bgRoot.backdropActive && !bgRoot.wallpaperIsGif && !bgRoot.wallpaperIsVideo
                     opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo && !bgRoot.wallpaperIsGif) ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.InOutQuad } }
                     cache: true
@@ -261,9 +272,54 @@ Variants {
                     fillMode: Image.PreserveAspectCrop
                     // No sourceSize for GIFs - let Qt handle native size for performance
                 }
+
+                // Video wallpaper (Qt Multimedia - native, lighter than mpvpaper)
+                Video {
+                    id: videoWallpaper
+                    anchors.fill: parent
+                    visible: opacity > 0 && !blurLoader.active && !bgRoot.backdropActive && bgRoot.wallpaperIsVideo
+                    opacity: bgRoot.wallpaperIsVideo ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.InOutQuad } }
+                    source: {
+                        if (bgRoot.wallpaperSafetyTriggered || !bgRoot.wallpaperIsVideo) return "";
+                        const path = bgRoot.wallpaperPath;
+                        if (!path) return "";
+                        // Qt Multimedia needs file:// URL format
+                        return path.startsWith("file://") ? path : ("file://" + path);
+                    }
+                    fillMode: VideoOutput.PreserveAspectCrop
+                    loops: MediaPlayer.Infinite
+                    muted: true
+                    autoPlay: true
+                    
+                    onPlaybackStateChanged: {
+                        if (playbackState === MediaPlayer.StoppedState && visible && !GlobalStates.screenLocked) {
+                            play()
+                        }
+                    }
+                    
+                    onVisibleChanged: {
+                        if (visible && !GlobalStates.screenLocked && bgRoot.wallpaperIsVideo) {
+                            play()
+                        } else {
+                            pause()
+                        }
+                    }
+                    
+                    Connections {
+                        target: GlobalStates
+                        function onScreenLockedChanged() {
+                            if (GlobalStates.screenLocked) {
+                                videoWallpaper.pause()
+                            } else if (videoWallpaper.visible && bgRoot.wallpaperIsVideo) {
+                                videoWallpaper.play()
+                            }
+                        }
+                    }
+                }
             }
 
-            // Always-on wallpaper blur (disabled for GIFs - too expensive)
+            // Always-on wallpaper blur (disabled for GIFs and videos - too expensive)
             Loader {
                 id: blurAlwaysLoader
                 z: 1
@@ -275,17 +331,19 @@ Variants {
                         && !blurLoader.active
                         && !bgRoot.backdropActive
                         && !bgRoot.wallpaperIsGif
+                        && !bgRoot.wallpaperIsVideo
                 anchors.fill: wallpaperContainer
                 sourceComponent: Item {
                     anchors.fill: parent
-                    opacity: bgRoot.wallpaperIsVideo
-                              ? bgRoot.blurProgress * Math.max(0, Math.min(1, bgRoot.effectsOptions.videoBlurStrength ?? 50) / 100)
-                              : bgRoot.blurProgress
+                    opacity: bgRoot.blurProgress
 
                     GaussianBlur {
                         anchors.fill: parent
                         source: wallpaperContainer
-                        radius: bgRoot.effectsOptions.blurRadius ?? 32
+                        // For videos, apply videoBlurStrength as a percentage of the full blur radius
+                        radius: bgRoot.wallpaperIsVideo
+                            ? Math.round((bgRoot.effectsOptions.blurRadius ?? 32) * Math.max(0, Math.min(1, (bgRoot.effectsOptions.videoBlurStrength ?? 50) / 100)))
+                            : (bgRoot.effectsOptions.blurRadius ?? 32)
                         samples: radius * 2 + 1
                     }
                 }
@@ -298,11 +356,12 @@ Variants {
                 anchors.fill: wallpaperContainer
                 scale: GlobalStates.screenLocked ? (bgRoot.lockBlurOptions.extraZoom ?? 1) : 1
                 Behavior on scale {
+                    enabled: Appearance.animationsEnabled
                     NumberAnimation {
                         id: scaleAnim
-                        duration: 400
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
+                        duration: Appearance.animation.elementMoveEnter.duration
+                        easing.type: Appearance.animation.elementMoveEnter.type
+                        easing.bezierCurve: Appearance.animation.elementMoveEnter.bezierCurve
                     }
                 }
                 sourceComponent: GaussianBlur {
@@ -331,7 +390,10 @@ Variants {
                     const total = Math.max(0, Math.min(100, baseSafe + extra));
                     return Qt.rgba(0, 0, 0, total / 100);
                 }
-                Behavior on color { ColorAnimation { duration: 220 } }
+                Behavior on color {
+                    enabled: Appearance.animationsEnabled
+                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                }
             }
 
             WidgetCanvas {

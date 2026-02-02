@@ -182,6 +182,16 @@ ContentPage {
 
         SettingsGroup {
             SettingsSwitch {
+                buttonIcon: "visibility_off"
+                text: Translation.tr("No visual UI (cycle windows only)")
+                checked: Config.options?.altSwitcher?.noVisualUi ?? false
+                onCheckedChanged: Config.setNestedValue("altSwitcher.noVisualUi", checked)
+                StyledToolTip {
+                    text: Translation.tr("Use Alt+Tab to switch windows without showing the switcher overlay")
+                }
+            }
+
+            SettingsSwitch {
                 buttonIcon: "colors"
                 text: Translation.tr("Tint app icons")
                 checked: Config.options?.altSwitcher?.monochromeIcons ?? false
