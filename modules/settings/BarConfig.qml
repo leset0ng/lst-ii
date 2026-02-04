@@ -644,16 +644,48 @@ ContentPage {
             ConfigRow {
                 uniform: true
                 SettingsSwitch {
-                    buttonIcon: "videocam"
-                    text: Translation.tr("Screen record")
-                    checked: Config.options.bar.utilButtons.showScreenRecord
-                    onCheckedChanged: Config.options.bar.utilButtons.showScreenRecord = checked
+                    buttonIcon: "visibility"
+                    text: Translation.tr("Screen cast")
+                    checked: Config.options.bar.utilButtons.showScreenCast
+                    onCheckedChanged: Config.options.bar.utilButtons.showScreenCast = checked
+                    StyledToolTip {
+                        text: Translation.tr("Toggle Niri screen casting to external monitor")
+                    }
                 }
                 SettingsSwitch {
                     buttonIcon: "edit_note"
                     text: Translation.tr("Notepad")
                     checked: Config.options.bar.utilButtons.showNotepad
                     onCheckedChanged: Config.options.bar.utilButtons.showNotepad = checked
+                }
+            }
+
+            ConfigRow {
+                uniform: true
+                visible: Config.options.bar.utilButtons.showScreenCast
+                
+                ContentSubsection {
+                    title: Translation.tr("Cast output")
+                    Layout.fillWidth: true
+                    
+                    ConfigTextField {
+                        Layout.fillWidth: true
+                        placeholderText: "HDMI-A-1"
+                        text: Config.options.bar.utilButtons.screenCastOutput
+                        onTextChanged: {
+                            if (text !== Config.options.bar.utilButtons.screenCastOutput) {
+                                Config.options.bar.utilButtons.screenCastOutput = text
+                            }
+                        }
+                    }
+                    
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: Translation.tr("Run 'niri msg outputs' to find your output name")
+                        color: Appearance.colors.colSubtext
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        wrapMode: Text.WordWrap
+                    }
                 }
             }
 
