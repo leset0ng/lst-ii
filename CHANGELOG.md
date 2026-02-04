@@ -5,6 +5,20 @@ All notable changes to iNiR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-02-04
+
+### Added
+- **Screen cast toggle**: Bar utility button with dynamic state detection for screen recording/casting
+- **System sounds volume control**: Configurable volume for timer, pomodoro, and battery notification sounds
+
+### Changed
+- **Video wallpapers**: Replaced mpvpaper with Qt Multimedia for native video wallpaper support
+
+### Fixed
+- **Terminal color theming**: Auto-fix for Alacritty v0.13+ import order requirement - colors now update correctly with wallpaper changes (Issue #30)
+- **Package installation**: Replaced non-existent `matugen-bin` AUR package with `matugen` from official Arch repos (Issue #32)
+- **Waffle background**: Added missing optional chaining in config access to prevent startup errors
+
 ## [2.7.0] - 2026-01-21
 
 ### Added
