@@ -179,10 +179,11 @@ reload_terminal_colors() {
         fi
         ;;
       ghostty)
-        # Ghostty: reload config via SIGUSR1
+        # Ghostty: does NOT support SIGUSR1 reload (as of v1.x)
+        # Config reload is only via Ctrl+Shift+, keyboard shortcut
+        # Colors will apply on next new window/tab or manual reload
         if pgrep -x ghostty &>/dev/null; then
-          pkill -USR1 ghostty 2>/dev/null && \
-            echo "[terminal-colors] Ghostty: sent SIGUSR1 reload signal"
+          echo "[terminal-colors] Ghostty: config updated (press Ctrl+Shift+, to reload, or open new window)"
         fi
         ;;
       konsole)
