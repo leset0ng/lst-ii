@@ -97,21 +97,50 @@ Singleton {
                     if (json.repo_path && json.repo_path.length > 0) {
                         root.repoPath = json.repo_path
                         print("[ShellUpdates] Using repo path from version.json: " + root.repoPath)
-                    } else {
-                        print("[ShellUpdates] No repo_path in version.json, using config dir: " + root.configDir)
+                        root.repoPathLoaded = true
+                        availabilityProc.running = true
+                        return
                     }
                 } catch (e) {
                     print("[ShellUpdates] Failed to parse version.json: " + e)
-                    print("[ShellUpdates] Using config dir as fallback: " + root.configDir)
+                }
+                // No repo_path in version.json, try to find it
+                print("[ShellUpdates] No repo_path in version.json, searching for repository...")
+                searchRepoProc.running = true
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                print("[ShellUpdates] version.json not found, searching for repository...")
+                searchRepoProc.running = true
+            }
+        }
+    }
+    
+    // Search for repository in common locations
+    Process {
+        id: searchRepoProc
+        running: false
+        command: [
+            "/usr/bin/bash", "-c",
+            "for dir in ~/inir ~/iNiR ~/Downloads/inir ~/Downloads/iNiR ~/.local/src/inir ~/.local/src/iNiR /tmp/inir /tmp/iNiR; do " +
+            "if [[ -d \"$dir/.git\" ]]; then echo \"$dir\"; exit 0; fi; done; " +
+            "echo ''"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const foundPath = (text ?? "").trim()
+                if (foundPath.length > 0) {
+                    root.repoPath = foundPath
+                    print("[ShellUpdates] Found repository at: " + root.repoPath)
+                } else {
+                    print("[ShellUpdates] Repository not found, using config dir: " + root.configDir)
+                    print("[ShellUpdates] Update feature will not be available")
                 }
                 root.repoPathLoaded = true
             }
         }
         onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                print("[ShellUpdates] version.json not found, using config dir: " + root.configDir)
-                root.repoPathLoaded = true
-            }
             // Now check git availability
             availabilityProc.running = true
         }
