@@ -671,7 +671,7 @@ Singleton {
                 // Do Not Disturb mode
                 property bool silent: false
                 // Use legacy manual counter (false = auto-sync with popup list, true = manual counter)
-                property bool useLegacyCounter: false
+                property bool useLegacyCounter: true
             }
 
             property JsonObject osd: JsonObject {
