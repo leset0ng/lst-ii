@@ -104,7 +104,7 @@ Full list: [docs/KEYBINDS.md](docs/KEYBINDS.md)
 | Document | Description |
 |----------|-------------|
 | [INSTALL.md](docs/INSTALL.md) | Installation guide |
-| [SETUP.md](docs/SETUP.md) | Setup script, updates, rollback |
+| [SETUP.md](docs/SETUP.md) | Setup commands, updates, migrations, uninstall |
 | [KEYBINDS.md](docs/KEYBINDS.md) | Keyboard shortcuts |
 | [IPC.md](docs/IPC.md) | IPC targets for custom bindings |
 | [PACKAGES.md](docs/PACKAGES.md) | Required packages |

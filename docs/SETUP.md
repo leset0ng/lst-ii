@@ -68,6 +68,38 @@ Diagnoses and **automatically fixes** common issues:
 
 Restore a previous snapshot if something breaks after an update. Shows available snapshots with dates and lets you choose which one to restore.
 
+## Migrate
+
+```bash
+./setup migrate
+```
+
+Review and apply pending config migrations. Migrations are changes to user configs (keybinds, layer rules, etc.) required by new features.
+
+What happens:
+- Shows list of pending migrations
+- Displays exactly what each migration will change
+- Creates automatic backup before applying
+- Lets you choose which migrations to apply
+- Required migrations are applied automatically during `update`
+- Optional migrations can be applied manually
+
+## My Changes
+
+```bash
+./setup my-changes
+```
+
+View and manage your modifications to distributed files. The setup script tracks which files you've customized.
+
+What it shows:
+- List of files you've modified from defaults
+- Option to view differences
+- Option to restore original versions
+- Option to keep your modifications
+
+Useful when you want to see what you've changed or restore defaults after customization.
+
 ## Commands
 
 | Command | Description |
@@ -85,14 +117,34 @@ Options: `-y` (skip prompts), `-q` (quiet), `-h` (help)
 
 ## What Gets Installed
 
+### Core Files
+
 | Source | Destination |
 |--------|-------------|
 | QML code | `~/.config/quickshell/ii/` |
-| Niri config | `~/.config/niri/config.kdl` |
-| ii config | `~/.config/illogical-impulse/config.json` |
-| GTK/Qt themes | `~/.config/gtk-*/`, `~/.config/kdeglobals` |
+| User config | `~/.config/illogical-impulse/config.json` |
+| State files | `~/.local/state/quickshell/user/` |
+| Cache | `~/.cache/quickshell/ii/` |
+| Super daemon | `~/.local/bin/ii_super_overview_daemon.py` |
+| Daemon service | `~/.config/systemd/user/ii-super-overview.service` |
 
-On first install, existing configs are backed up. On updates, your configs are never touched - only QML code is synced.
+### Compositor & Themes
+
+| Source | Destination |
+|--------|-------------|
+| Niri config | `~/.config/niri/config.kdl` |
+| GTK themes | `~/.config/gtk-3.0/`, `~/.config/gtk-4.0/` |
+| Qt themes | `~/.config/kdeglobals`, `~/.config/Kvantum/` |
+| Color schemes | `~/.local/share/color-schemes/` |
+| Matugen config | `~/.config/matugen/` |
+| Fuzzel config | `~/.config/fuzzel/` |
+| Vesktop themes | `~/.config/vesktop/themes/` |
+
+### Behavior
+
+- First install: Existing configs are backed up to `~/inir-backup/`
+- Updates: Your configs are never touched, only QML code is synced
+- Shared configs: Only installed if they don't exist or you approve overwrite
 
 ## Migrations
 
