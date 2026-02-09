@@ -18,7 +18,7 @@ Item {
     readonly property color colText: Appearance.inirEverywhere ? Appearance.inir.colText : Appearance.colors.colOnLayer1
     readonly property color colTextSecondary: Appearance.inirEverywhere ? Appearance.inir.colTextSecondary : Appearance.colors.colSubtext
     readonly property color colPrimary: Appearance.inirEverywhere ? Appearance.inir.colPrimary : Appearance.colors.colPrimary
-    readonly property color colBorder: Appearance.inirEverywhere ? Appearance.inir.colBorder 
+    readonly property color colBorder: Appearance.inirEverywhere ? Appearance.inir.colBorder
         : Appearance.auroraEverywhere ? "transparent"
         : Appearance.colors.colOutlineVariant
 

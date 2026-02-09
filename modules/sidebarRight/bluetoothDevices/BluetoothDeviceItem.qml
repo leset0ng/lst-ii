@@ -12,7 +12,7 @@ DialogListItem {
 
     onClicked: expanded = !expanded
     altAction: () => expanded = !expanded
-    
+
     component ActionButton: DialogButton {
         colBackground: Appearance.inirEverywhere ? Appearance.inir.colPrimary : Appearance.colors.colPrimary
         colBackgroundHover: Appearance.inirEverywhere ? Appearance.inir.colPrimaryHover : Appearance.colors.colPrimaryHover
@@ -44,9 +44,10 @@ DialogListItem {
                 Layout.fillWidth: true
                 StyledText {
                     Layout.fillWidth: true
-                    color: Appearance.inirEverywhere ? Appearance.inir.colText : Appearance.colors.colOnSurfaceVariant
+                    color: inirEverywhere ? Appearance.inir.colText : Appearance.colors.colOnSurfaceVariant
                     elide: Text.ElideRight
                     text: root.device?.name || Translation.tr("Unknown device")
+                    textFormat: Text.PlainText
                 }
                 StyledText {
                     visible: (root.device?.connected || root.device?.paired) ?? false

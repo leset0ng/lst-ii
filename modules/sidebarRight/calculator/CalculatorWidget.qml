@@ -16,16 +16,16 @@ Item {
     property string expression: ""
     property bool newNumber: true
     property string lastOp: ""
-    
+
     // Memory
     property real memory: 0
     property bool hasMemory: false
-    
+
     // History
     property var history: []
     property int maxHistory: 10
     property bool showHistory: false
-    
+
     // Scientific mode
     property bool scientificMode: false
 
@@ -91,18 +91,18 @@ Item {
             // Sanitize: only allow digits, operators, parentheses, decimal
             finalExpr = finalExpr.replace(/[^-()\d/*+.\s]/g, '')
             if (!finalExpr.trim()) return
-            
+
             let result = eval(finalExpr)
-            
+
             if (!isFinite(result)) {
                 displayValue = "Error"
             } else {
                 let resultStr = result.toString()
                 if (resultStr.length > 14) resultStr = result.toPrecision(10)
-                
+
                 // Add to history
                 addToHistory(expression + displayValue, resultStr)
-                
+
                 displayValue = resultStr
             }
             expression = ""

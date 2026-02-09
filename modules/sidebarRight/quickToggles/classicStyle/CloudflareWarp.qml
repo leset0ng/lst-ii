@@ -7,23 +7,8 @@ import Quickshell
 
 QuickToggleButton {
     id: root
-
-    readonly property string warpCliPath: "/usr/bin/warp-cli"
-    readonly property string notifySendPath: "/usr/bin/notify-send"
-
-    property bool _daemonRunning: true
-
     toggled: false
     visible: false
-
-    function refreshStatus() {
-        fetchActiveState.running = false;
-        fetchActiveState.running = true;
-    }
-
-    altAction: () => {
-        startServiceProc.running = true;
-    }
     
     contentItem: CustomIcon {
         id: distroIcon
@@ -41,53 +26,38 @@ QuickToggleButton {
     }
 
     onClicked: {
-        if (!root._daemonRunning) {
-            startServiceProc.running = true;
-            return;
-        }
-        if (toggled) disconnectProc.running = true;
-        else connectProc.running = true;
-    }
-
-    Process {
-        id: disconnectProc
-        command: [root.warpCliPath, "disconnect"]
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                Quickshell.execDetached([root.notifySendPath,
-                    Translation.tr("Cloudflare WARP"),
-                    Translation.tr("Disconnect failed. Please inspect manually with the <tt>warp-cli</tt> command"),
-                    "-a", "Shell"
-                ])
-            }
-            root.refreshStatus();
+        if (toggled) {
+            root.toggled = false
+            Quickshell.execDetached(["warp-cli", "disconnect"])
+        } else {
+            root.toggled = true
+            Quickshell.execDetached(["warp-cli", "connect"])
         }
     }
 
     Process {
         id: connectProc
-        command: [root.warpCliPath, "connect"]
+        command: ["warp-cli", "connect"]
         onExited: (exitCode, exitStatus) => {
             if (exitCode !== 0) {
-                Quickshell.execDetached([root.notifySendPath,
+                Quickshell.execDetached(["notify-send", 
                     Translation.tr("Cloudflare WARP"), 
                     Translation.tr("Connection failed. Please inspect manually with the <tt>warp-cli</tt> command")
                     , "-a", "Shell"
                 ])
             }
-            root.refreshStatus();
         }
     }
 
     Process {
         id: registrationProc
-        command: [root.warpCliPath, "registration", "new"]
+        command: ["warp-cli", "registration", "new"]
         onExited: (exitCode, exitStatus) => {
             console.log("Warp registration exited with code and status:", exitCode, exitStatus)
             if (exitCode === 0) {
                 connectProc.running = true
             } else {
-                Quickshell.execDetached([root.notifySendPath,
+                Quickshell.execDetached(["notify-send", 
                     Translation.tr("Cloudflare WARP"), 
                     Translation.tr("Registration failed. Please inspect manually with the <tt>warp-cli</tt> command"),
                     "-a", "Shell"
@@ -98,56 +68,24 @@ QuickToggleButton {
 
     Process {
         id: fetchActiveState
-        running: false
-        command: ["/bin/sh", "-c", root.warpCliPath + " status"]
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                root.visible = true
-            }
-        }
+        running: true
+        command: ["bash", "-c", "warp-cli status"]
         stdout: StdioCollector {
             id: warpStatusCollector
             onStreamFinished: {
-                const out = warpStatusCollector.text
-
-                if (out.length > 0 || out.includes("Unable")) {
+                if (warpStatusCollector.text.length > 0) {
                     root.visible = true
                 }
-
-                if (out.includes("Unable to connect")) {
-                    root._daemonRunning = false
-                    root.toggled = false
-                    return;
-                }
-
-                root._daemonRunning = true
-                if (out.includes("Unable")) {
+                if (warpStatusCollector.text.includes("Unable")) {
                     registrationProc.running = true
-                } else if (out.includes("Connected")) {
+                } else if (warpStatusCollector.text.includes("Connected")) {
                     root.toggled = true
-                } else if (out.includes("Disconnected")) {
+                } else if (warpStatusCollector.text.includes("Disconnected")) {
                     root.toggled = false
                 }
             }
         }
     }
-
-    Process {
-        id: startServiceProc
-        command: ["/usr/bin/systemctl", "start", "warp-svc.service"]
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                Quickshell.execDetached([root.notifySendPath,
-                    Translation.tr("Cloudflare WARP"),
-                    Translation.tr("Failed to start warp-svc. You may need to run: <tt>sudo systemctl start warp-svc</tt>"),
-                    "-a", "Shell"
-                ])
-            }
-            root.refreshStatus();
-        }
-    }
- 
-    Component.onCompleted: root.refreshStatus()
     StyledToolTip {
         text: Translation.tr("Cloudflare WARP (1.1.1.1)")
     }

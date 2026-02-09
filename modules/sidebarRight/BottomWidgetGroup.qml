@@ -2,24 +2,27 @@ import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
 import qs.services
-import qs.modules.sidebarRight.calendar
-import qs.modules.sidebarRight.todo
-import qs.modules.sidebarRight.pomodoro
-import qs.modules.sidebarRight.notepad
-import qs.modules.sidebarRight.calculator
-import qs.modules.sidebarRight.sysmon
+import qs.modules.ii.sidebarRight.calendar
+import qs.modules.ii.sidebarRight.todo
+import qs.modules.ii.sidebarRight.pomodoro
+import qs.modules.ii.sidebarRight.notepad
+import qs.modules.ii.sidebarRight.calculator
+import qs.modules.ii.sidebarRight.sysmon
 import QtQuick
 import QtQuick.Layouts
 // import Qt5Compat.GraphicalEffects // Might not be available, using standard Rectangle gradient instead
 
 Rectangle {
     id: root
+
+    readonly property bool cardStyle: Config.options?.sidebar?.cardStyle ?? false
+
     radius: Appearance.inirEverywhere ? Appearance.inir.roundingNormal : Appearance.rounding.normal
-    color: Appearance.inirEverywhere ? Appearance.inir.colLayer1
-         : Appearance.auroraEverywhere ? "transparent"
-         : Appearance.colors.colLayer1
+    color: (cardStyle||Appearance.auroraEverywhere)?"transparent"
+        : Appearance.inirEverywhere ? Appearance.inir.colLayer1
+        : Appearance.colors.colLayer1
     border.width: Appearance.inirEverywhere ? 1 : 0
-    border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder : "transparent"
+    border.color: Appearance.inir.colBorder
     clip: true
     visible: tabs.length > 0
     implicitHeight: visible ? (collapsed ? collapsedBottomWidgetGroupRow.implicitHeight : bottomWidgetGroupRow.implicitHeight) : 0

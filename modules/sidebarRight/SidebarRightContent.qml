@@ -13,37 +13,25 @@ import Quickshell.Hyprland
 import QtQuick.Effects
 import Qt5Compat.GraphicalEffects as GE
 
-import qs.modules.sidebarRight.quickToggles
-import qs.modules.sidebarRight.quickToggles.classicStyle
+import qs.modules.ii.sidebarRight.quickToggles
+import qs.modules.ii.sidebarRight.quickToggles.classicStyle
 
-import qs.modules.sidebarRight.bluetoothDevices
-import qs.modules.sidebarRight.nightLight
-import qs.modules.sidebarRight.volumeMixer
-import qs.modules.sidebarRight.wifiNetworks
+import qs.modules.ii.sidebarRight.bluetoothDevices
+import qs.modules.ii.sidebarRight.nightLight
+import qs.modules.ii.sidebarRight.volumeMixer
+import qs.modules.ii.sidebarRight.wifiNetworks
 
 Item {
     id: root
     property int sidebarWidth: Appearance.sizes.sidebarWidth
     property int sidebarPadding: 10
     property string settingsQmlPath: Quickshell.shellPath("settings.qml")
-    property int screenWidth: 1920
-    property int screenHeight: 1080
     property bool showAudioOutputDialog: false
     property bool showAudioInputDialog: false
     property bool showBluetoothDialog: false
     property bool showNightLightDialog: false
     property bool showWifiDialog: false
     property bool editMode: false
-    
-    // Debounce timers to prevent accidental double-clicks
-    property bool reloadButtonEnabled: true
-    property bool settingsButtonEnabled: true
-
-    function focusActiveItem() {
-        if (bottomWidgetGroup && bottomWidgetGroup.focusActiveItem) {
-            bottomWidgetGroup.focusActiveItem()
-        }
-    }
 
     Connections {
         target: GlobalStates
@@ -53,7 +41,6 @@ Item {
                 root.showBluetoothDialog = false;
                 root.showAudioOutputDialog = false;
                 root.showAudioInputDialog = false;
-                root.showNightLightDialog = false;
             }
         }
     }
@@ -150,9 +137,9 @@ Item {
                 Layout.fillWidth: true
                 visible: active
                 active: {
-                    const configQuickSliders = Config.options?.sidebar?.quickSliders
-                    if (!configQuickSliders?.enable) return false
-                    if (!configQuickSliders?.showMic && !configQuickSliders?.showVolume && !configQuickSliders?.showBrightness) return false;
+                    const configQuickSliders = Config.options.sidebar.quickSliders
+                    if (!configQuickSliders.enable) return false
+                    if (!configQuickSliders.showMic && !configQuickSliders.showVolume && !configQuickSliders.showBrightness) return false;
                     return true;
                 }
                 sourceComponent: QuickSliders {}
@@ -236,19 +223,22 @@ Item {
         readonly property bool shown: root[shownPropertyString]
         anchors.fill: parent
 
+        onShownChanged: if (shown) toggleDialogLoader.active = true;
         active: shown
-        
-        onItemChanged: {
-            if (item) {
+        onActiveChanged: {
+            if (active) {
                 item.show = true;
                 item.forceActiveFocus();
             }
         }
-        
         Connections {
             target: toggleDialogLoader.item
             function onDismiss() {
+                toggleDialogLoader.item.show = false
                 root[toggleDialogLoader.shownPropertyString] = false;
+            }
+            function onVisibleChanged() {
+                if (!toggleDialogLoader.item.visible && !root[toggleDialogLoader.shownPropertyString]) toggleDialogLoader.active = false;
             }
         }
     }
@@ -259,7 +249,7 @@ Item {
         Layout.alignment: item?.Layout.alignment ?? Qt.AlignHCenter
         Layout.fillWidth: item?.Layout.fillWidth ?? false
         visible: active
-        active: (Config.options?.sidebar?.quickToggles?.style ?? "classic") === styleName
+        active: Config.options.sidebar.quickToggles.style === styleName
         Connections {
             target: quickPanelImplLoader.item
             function onOpenAudioOutputDialog() {
@@ -296,7 +286,7 @@ Item {
             radius: height / 2
             implicitWidth: uptimeRow.implicitWidth + 24
             implicitHeight: uptimeRow.implicitHeight + 8
-            
+
             Row {
                 id: uptimeRow
                 anchors.centerIn: parent
@@ -331,11 +321,10 @@ Item {
                 ? Appearance.aurora.colSubSurface
                 : Appearance.colors.colLayer1
             padding: 4
-            spacing: 8  // Increased from default 5 to reduce accidental clicks
 
             QuickToggleButton {
                 toggled: root.editMode
-                visible: (Config.options?.sidebar?.quickToggles?.style ?? "classic") === "android"
+                visible: Config.options.sidebar.quickToggles.style === "android"
                 buttonIcon: "edit"
                 onClicked: root.editMode = !root.editMode
                 StyledToolTip {
@@ -343,7 +332,6 @@ Item {
                 }
             }
             QuickToggleButton {
-                id: reloadButton
                 toggled: false
                 enabled: root.reloadButtonEnabled
                 opacity: enabled ? 1.0 : 0.5
@@ -353,23 +341,23 @@ Item {
                         console.log("[SidebarRight] Reload button still on cooldown, ignoring click");
                         return;
                     }
-                    
+
                     console.log("[SidebarRight] Reload button clicked");
                     root.reloadButtonEnabled = false;
                     reloadButtonCooldown.restart();
-                    
+
                     if (CompositorService.isHyprland) {
                         Hyprland.dispatch("reload");
                     } else if (CompositorService.isNiri) {
                         Quickshell.execDetached(["/usr/bin/niri", "msg", "action", "load-config-file"]);
                     }
+
                     Quickshell.reload(true);
                 }
                 StyledToolTip {
                     text: Translation.tr("Reload Quickshell")
                 }
             }
-            
             Timer {
                 id: reloadButtonCooldown
                 interval: 500
@@ -379,21 +367,9 @@ Item {
                 }
             }
             QuickToggleButton {
-                id: settingsButton
                 toggled: false
-                enabled: root.settingsButtonEnabled
-                opacity: enabled ? 1.0 : 0.5
                 buttonIcon: "settings"
                 onClicked: {
-                    if (!root.settingsButtonEnabled) {
-                        console.log("[SidebarRight] Settings button still on cooldown, ignoring click");
-                        return;
-                    }
-                    
-                    console.log("[SidebarRight] Settings button clicked");
-                    root.settingsButtonEnabled = false;
-                    settingsButtonCooldown.restart();
-                    
                     if (CompositorService.isNiri) {
                         const wins = NiriService.windows || []
                         console.log("[SidebarRight] Checking for existing settings window among", wins.length, "windows");
@@ -410,7 +386,7 @@ Item {
                         }
                         console.log("[SidebarRight] No existing settings window found");
                     }
-                    
+
                     console.log("[SidebarRight] Opening new settings window via IPC");
                     GlobalStates.sidebarRightOpen = false;
                     Qt.callLater(() => {
@@ -419,15 +395,6 @@ Item {
                 }
                 StyledToolTip {
                     text: Translation.tr("Settings")
-                }
-            }
-            
-            Timer {
-                id: settingsButtonCooldown
-                interval: 500
-                onTriggered: {
-                    root.settingsButtonEnabled = true;
-                    console.log("[SidebarRight] Settings button cooldown finished");
                 }
             }
             QuickToggleButton {

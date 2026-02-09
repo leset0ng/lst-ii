@@ -112,22 +112,22 @@ Item {
                 Layout.preferredWidth: 90
                 onClicked: TimerService.toggleCountdown()
                 enabled: TimerService.countdownDuration > 0
-                colBackground: TimerService.countdownRunning 
+                colBackground: TimerService.countdownRunning
                     ? (Appearance.inirEverywhere ? Appearance.inir.colLayer2
                         : Appearance.auroraEverywhere ? Appearance.aurora.colElevatedSurface : Appearance.colors.colSecondaryContainer)
                     : Appearance.colors.colPrimary
-                colBackgroundHover: TimerService.countdownRunning 
+                colBackgroundHover: TimerService.countdownRunning
                     ? (Appearance.inirEverywhere ? Appearance.inir.colLayer2Hover
                         : Appearance.auroraEverywhere ? Appearance.aurora.colElevatedSurfaceHover : Appearance.colors.colSecondaryContainerHover)
                     : Appearance.colors.colPrimaryHover
-                colRipple: TimerService.countdownRunning 
+                colRipple: TimerService.countdownRunning
                     ? (Appearance.inirEverywhere ? Appearance.inir.colLayer2Active
                         : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurfaceActive : Appearance.colors.colSecondaryContainerActive)
                     : Appearance.colors.colPrimaryActive
 
                 contentItem: StyledText {
                     horizontalAlignment: Text.AlignHCenter
-                    color: TimerService.countdownRunning 
+                    color: TimerService.countdownRunning
                         ? (Appearance.inirEverywhere ? Appearance.inir.colText
                             : Appearance.auroraEverywhere ? Appearance.colors.colOnLayer2 : Appearance.colors.colOnSecondaryContainer)
                         : Appearance.colors.colOnPrimary

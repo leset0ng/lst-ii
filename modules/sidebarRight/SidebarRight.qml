@@ -13,7 +13,7 @@ Scope {
     property int sidebarWidth: Appearance.sizes.sidebarWidth
 
     PanelWindow {
-        id: sidebarRoot
+        id: panelWindow
         visible: GlobalStates.sidebarRightOpen
 
         function hide() {
@@ -35,10 +35,10 @@ Scope {
 
         CompositorFocusGrab {
             id: grab
-            windows: [ sidebarRoot ]
-            active: CompositorService.isHyprland && sidebarRoot.visible
+            windows: [ panelWindow ]
+            active: CompositorService.isHyprland && panelWindow.visible
             onCleared: () => {
-                if (!active) sidebarRoot.hide()
+                if (!active) panelWindow.hide()
             }
         }
 
@@ -49,7 +49,7 @@ Scope {
                 const localPos = mapToItem(sidebarContentLoader, mouse.x, mouse.y)
                 if (localPos.x < 0 || localPos.x > sidebarContentLoader.width
                         || localPos.y < 0 || localPos.y > sidebarContentLoader.height) {
-                    sidebarRoot.hide()
+                    panelWindow.hide()
                 }
             }
         }
@@ -89,14 +89,11 @@ Scope {
             focus: GlobalStates.sidebarRightOpen
             Keys.onPressed: (event) => {
                 if (event.key === Qt.Key_Escape) {
-                    sidebarRoot.hide();
+                    panelWindow.hide();
                 }
             }
 
-            sourceComponent: SidebarRightContent {
-                screenWidth: sidebarRoot.screen?.width ?? 1920
-                screenHeight: sidebarRoot.screen?.height ?? 1080
-            }
+            sourceComponent: SidebarRightContent {}
         }
     }
 

@@ -7,6 +7,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Io
+import Quickshell.Hyprland
 
 QuickToggleButton {
     id: root
@@ -16,7 +17,10 @@ QuickToggleButton {
     onClicked: {
         Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter?.enabled
     }
-    // altAction is set by parent (ClassicQuickPanel opens dialog, others may open external app)
+    altAction: () => {
+        Quickshell.execDetached(["bash", "-c", `${Config.options.apps.bluetooth}`])
+        GlobalStates.sidebarRightOpen = false
+    }
     StyledToolTip {
         text: Translation.tr("%1 | Right-click to configure").arg(
             (BluetoothStatus.firstActiveDevice?.name ?? Translation.tr("Bluetooth"))

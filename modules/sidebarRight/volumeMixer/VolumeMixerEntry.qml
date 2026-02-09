@@ -10,7 +10,7 @@ Item {
     id: root
     required property PwNode node
     PwObjectTracker {
-        objects: [node]
+        objects: [root.node]
     }
 
     implicitHeight: rowLayout.implicitHeight
@@ -28,10 +28,10 @@ Item {
             sourceSize.height: size
             source: {
                 let icon;
-                icon = AppSearch.guessIcon(root.node.properties["application.icon-name"]);
+                icon = AppSearch.guessIcon(root.node?.properties["application.icon-name"] ?? "");
                 if (AppSearch.iconExists(icon))
                     return Quickshell.iconPath(icon, "image-missing");
-                icon = AppSearch.guessIcon(root.node.properties["node.name"]);
+                icon = AppSearch.guessIcon(root.node?.properties["node.name"] ?? "");
                 return Quickshell.iconPath(icon, "image-missing");
             }
         }
@@ -47,7 +47,7 @@ Item {
                 elide: Text.ElideRight
                 text: {
                     // application.name -> description -> name
-                    const app = root.node.properties["application.name"] ?? (root.node.description != "" ? root.node.description : root.node.name);
+                    const app = Audio.appNodeDisplayName(root.node);
                     const media = root.node.properties["media.name"];
                     return media != undefined ? `${app} • ${media}` : app;
                 }
@@ -55,23 +55,9 @@ Item {
 
             StyledSlider {
                 id: slider
+                value: root.node?.audio.volume ?? 0
+                onMoved: root.node.audio.volume = value
                 configuration: StyledSlider.Configuration.S
-                property real modelValue: root.node?.audio.volume ?? 0
-                to: (root.node === Audio.sink) ? 1.5 : 1
-
-                Binding {
-                    target: slider
-                    property: "value"
-                    value: slider.modelValue
-                    when: !slider.pressed && !slider._userInteracting
-                }
-                onMoved: {
-                    if (root.node === Audio.sink) {
-                        Audio.sink.audio.volume = value
-                    } else if (root.node?.audio) {
-                        root.node.audio.volume = value
-                    }
-                }
             }
         }
     }

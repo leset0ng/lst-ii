@@ -1,22 +1,24 @@
 import qs.modules.common
 import qs.modules.common.widgets
-import qs.modules.common.functions
 import qs.services
-import qs.modules.sidebarRight.notifications
-import qs.modules.sidebarRight.volumeMixer
-import Qt5Compat.GraphicalEffects as GE
+import qs.modules.ii.sidebarRight.notifications
+import Qt5Compat.GraphicalEffects
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
 Rectangle {
     id: root
+    readonly property bool cardStyle: Config.options?.sidebar?.cardStyle ?? false
+
     radius: Appearance.inirEverywhere ? Appearance.inir.roundingNormal : Appearance.rounding.normal
-    color: Appearance.inirEverywhere ? Appearance.inir.colLayer1
-         : Appearance.auroraEverywhere ? "transparent" 
-         : Appearance.colors.colLayer1
-    border.width: Appearance.inirEverywhere ? 1 : 0
-    border.color: Appearance.inirEverywhere ? Appearance.inir.colBorder : "transparent"
+    color: cardStyle ? "transparent"
+        :(Appearance.inirEverywhere ? Appearance.inir.colLayer1
+        : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface
+        : Appearance.colors.colLayer1)
+
+    border.width: Appearance.inirEverywhere?1:0
+    border.color: Appearance.inir.colBorder
 
     NotificationList {
         anchors.fill: parent

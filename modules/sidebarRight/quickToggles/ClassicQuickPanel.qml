@@ -1,50 +1,39 @@
-import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
+import Quickshell.Bluetooth
 
-import qs.modules.sidebarRight.quickToggles.classicStyle
+import qs.modules.ii.sidebarRight.quickToggles.classicStyle
 
 AbstractQuickPanel {
     id: root
-    
-    implicitHeight: grid.implicitHeight
-    Layout.fillWidth: true
+    Layout.alignment: Qt.AlignHCenter
+    implicitWidth: buttonGroup.implicitWidth
+    implicitHeight: buttonGroup.implicitHeight
+    color: "transparent"
 
-    Grid {
-        id: grid
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.top: parent.top
-        
-        // Approximate width of a toggle (40) + spacing (12)
-        property int itemSlotWidth: 52 
-        columns: Math.max(1, Math.floor(root.width / itemSlotWidth))
-        
-        spacing: 12
-        
+    ButtonGroup {
+        id: buttonGroup
+        spacing: 5
+        padding: 5
+        color: Appearance.colors.colLayer1
+
         NetworkToggle {
-            altAction: () => root.openWifiDialog()
+            altAction: () => {
+                root.openWifiDialog();
+            }
         }
-        
         BluetoothToggle {
-            altAction: () => root.openBluetoothDialog()
+            altAction: () => {
+                root.openBluetoothDialog();
+            }
         }
-        
-        NightLight {
-            altAction: () => root.openNightLightDialog()
-        }
-        
-        EasyEffectsToggle {
-            altAction: () => Quickshell.execDetached(["easyeffects"])
-        }
-        
-        IdleInhibitor {}
-        
+        NightLight {}
         GameMode {}
-        
+        IdleInhibitor {}
+        EasyEffectsToggle {}
         CloudflareWarp {}
     }
 }

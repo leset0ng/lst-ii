@@ -40,6 +40,7 @@ DialogListItem {
                 color: Appearance.colors.colOnSurfaceVariant
                 elide: Text.ElideRight
                 text: root.wifiNetwork?.ssid ?? Translation.tr("Unknown")
+                textFormat: Text.PlainText
             }
             MaterialSymbol {
                 visible: (root.wifiNetwork?.isSecure || root.wifiNetwork?.active) ?? false
@@ -100,9 +101,9 @@ DialogListItem {
                 DialogButton {
                     Layout.fillWidth: true
                     buttonText: Translation.tr("Open network portal")
-                    colBackground: Appearance.auroraEverywhere ? "transparent" : Appearance.colors.colLayer4
-                    colBackgroundHover: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer4Hover
-                    colRipple: Appearance.auroraEverywhere ? Appearance.aurora.colSubSurfaceActive : Appearance.colors.colLayer4Active
+                    colBackground: Appearance.colors.colLayer4
+                    colBackgroundHover: Appearance.colors.colLayer4Hover
+                    colRipple: Appearance.colors.colLayer4Active
                     onClicked: {
                         Network.openPublicWifiPortal()
                         GlobalStates.sidebarRightOpen = false

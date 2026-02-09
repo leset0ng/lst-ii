@@ -41,7 +41,7 @@ Item {
                 font.weight: Font.Medium
                 color: root.colText
             }
-            
+
             RippleButton {
                 implicitWidth: 28; implicitHeight: 28
                 buttonRadius: 14
@@ -138,9 +138,9 @@ Item {
                             return parts.join(" • ")
                         }
                         progressValue: ResourceUsage.tempPercentage
-                        progressColor: ResourceUsage.maxTemp >= ResourceUsage.tempWarningThreshold 
-                            ? Appearance.colors.colError 
-                            : ResourceUsage.maxTemp >= 60 
+                        progressColor: ResourceUsage.maxTemp >= ResourceUsage.tempWarningThreshold
+                            ? Appearance.colors.colError
+                            : ResourceUsage.maxTemp >= 60
                                 ? Appearance.colors.colWarning ?? "#FFA500"
                                 : Appearance.colors.colPrimary
                         showGraph: false

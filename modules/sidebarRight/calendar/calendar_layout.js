@@ -60,10 +60,9 @@ function getDateInXMonthsTime(x) {
     return targetDate;
 }
 
-function getCalendarLayout(dateObject, highlight, firstDayOfWeek = 1) {
+function getCalendarLayout(dateObject, highlight) {
     if (!dateObject) dateObject = new Date();
-    // Convert JS getDay() (0=Sun) to offset from firstDayOfWeek
-    const weekday = (dateObject.getDay() - firstDayOfWeek + 7) % 7;
+    const weekday = (dateObject.getDay() + 6) % 7; // MONDAY IS THE FIRST DAY OF THE WEEK
     const day = dateObject.getDate();
     const month = dateObject.getMonth() + 1;
     const year = dateObject.getFullYear();
@@ -75,7 +74,7 @@ function getCalendarLayout(dateObject, highlight, firstDayOfWeek = 1) {
     // Fill
     var monthDiff = (weekdayOfMonthFirst == 0 ? 0 : -1);
     var toFill, dim;
-    if(weekdayOfMonthFirst == 0) {
+    if (weekdayOfMonthFirst == 0) {
         toFill = 1;
         dim = daysInMonth;
     }
@@ -89,8 +88,7 @@ function getCalendarLayout(dateObject, highlight, firstDayOfWeek = 1) {
         calendar[i][j] = {
             "day": toFill,
             "today": ((toFill == day && monthDiff == 0 && highlight) ? 1 : (
-                monthDiff == 0 ? 0 :
-                    -1
+                monthDiff == 0 ? 0 : -1
             ))
         };
         // Increment
@@ -113,4 +111,3 @@ function getCalendarLayout(dateObject, highlight, firstDayOfWeek = 1) {
     }
     return calendar;
 }
-

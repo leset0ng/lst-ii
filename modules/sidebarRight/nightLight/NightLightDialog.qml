@@ -9,12 +9,13 @@ import QtQuick.Layouts
 import Quickshell.Io
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 
 WindowDialog {
     id: root
     property var screen: root.QsWindow.window?.screen
     property var brightnessMonitor: Brightness.getMonitorForScreen(screen)
-    backgroundHeight: 680
+    backgroundHeight: 600
 
     WindowDialogTitle {
         text: Translation.tr("Eye protection")
@@ -57,50 +58,9 @@ WindowDialog {
             iconSize: Appearance.font.pixelSize.larger
             buttonIcon: "night_sight_auto"
             text: Translation.tr("Automatic")
-            checked: Config.options?.light?.night?.automatic ?? false
+            checked: Config.options.light.night.automatic
             onCheckedChanged: {
-                Config.setNestedValue("light.night.automatic", checked);
-            }
-        }
-
-        // Schedule settings (only visible when automatic is enabled)
-        Column {
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-            visible: Config.options?.light?.night?.automatic ?? false
-            opacity: visible ? 1 : 0
-            spacing: 4
-
-            Behavior on opacity {
-                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
-            }
-
-            ConfigTimeInput {
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                }
-                icon: "wb_twilight"
-                text: Translation.tr("Turn on at")
-                value: Config.options?.light?.night?.from ?? "19:00"
-                onTimeChanged: (newTime) => {
-                    Config.setNestedValue("light.night.from", newTime);
-                }
-            }
-
-            ConfigTimeInput {
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                }
-                icon: "wb_sunny"
-                text: Translation.tr("Turn off at")
-                value: Config.options?.light?.night?.to ?? "06:30"
-                onTimeChanged: (newTime) => {
-                    Config.setNestedValue("light.night.to", newTime);
-                }
+                Config.options.light.night.automatic = checked;
             }
         }
 
@@ -115,8 +75,8 @@ WindowDialog {
             from: 6500
             to: 1200
             stopIndicatorValues: [5000, to]
-            value: Config.options?.light?.night?.colorTemperature ?? 4500
-            onMoved: Config.setNestedValue("light.night.colorTemperature", value)
+            value: Config.options.light.night.colorTemperature
+            onMoved: Config.options.light.night.colorTemperature = value
             tooltipContent: `${Math.round(value)}K`
         }
     }
@@ -144,9 +104,9 @@ WindowDialog {
             iconSize: Appearance.font.pixelSize.larger
             buttonIcon: "flash_off"
             text: Translation.tr("Enable")
-            checked: Config.options?.light?.antiFlashbang?.enable ?? false
+            checked: Config.options.light.antiFlashbang.enable
             onCheckedChanged: {
-                Config.setNestedValue("light.antiFlashbang.enable", checked);
+                Config.options.light.antiFlashbang.enable = checked;
             }
             StyledToolTip {
                 text: Translation.tr("Example use case: eroge on one workspace, dark Discord window on another")

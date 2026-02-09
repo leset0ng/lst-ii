@@ -2,29 +2,42 @@ import QtQuick
 import QtQuick.Layouts
 import qs.services
 import qs.modules.common
+import qs.modules.common.models.quickToggles
 import qs.modules.common.functions
 import qs.modules.common.widgets
 
 GroupButton {
     id: root
     
+    // Info to be passed to by repeater
     required property int buttonIndex
     required property var buttonData
     required property bool expandedSize
-    required property string buttonIcon
-    required property string name
-    required property var mainAction
-    property var altAction: null
-    property string statusText: toggled ? Translation.tr("Active") : Translation.tr("Inactive")
-
     required property real baseCellWidth
     required property real baseCellHeight
     required property real cellSpacing
     required property int cellSize
+
+    // Signals
+    signal openMenu()
+
+    // Declared in specific toggles
+    property QuickToggleModel toggleModel
+    property string name: toggleModel?.name ?? ""
+    property string statusText: (toggleModel?.hasStatusText) ? (toggleModel?.statusText || (toggled ? Translation.tr("Active") : Translation.tr("Inactive"))) : ""
+    property string tooltipText: toggleModel?.tooltipText ?? ""
+    property string buttonIcon: toggleModel?.icon ?? "close"
+    property bool available: toggleModel?.available ?? true
+    toggled: toggleModel?.toggled ?? false
+    property var mainAction: toggleModel?.mainAction ?? null
+    altAction: toggleModel?.hasMenu ? (() => root.openMenu()) : (toggleModel?.altAction ?? null)
+
+    // Edit mode state
+    property bool editMode: false
+
+    // Sizing shenanigans
     baseWidth: root.baseCellWidth * cellSize + cellSpacing * (cellSize - 1)
     baseHeight: root.baseCellHeight
-
-    property bool editMode: false
     enableImplicitWidthAnimation: !editMode && root.mouseArea.containsMouse
     enableImplicitHeightAnimation: !editMode && root.mouseArea.containsMouse
     Behavior on baseWidth {
@@ -41,61 +54,127 @@ GroupButton {
         animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
     }
 
-
-
-    signal openMenu()
-
-    // TapHandler for right-click - needs to be here because contentItem has MouseAreas
-    TapHandler {
-        acceptedButtons: Qt.RightButton
-        onTapped: {
-            if (root.altAction) root.altAction();
-        }
-    }
-
+    enabled: available || editMode
     padding: 6
     horizontalPadding: padding
     verticalPadding: padding
 
-    colBackground: Appearance.inirEverywhere ? Appearance.inir.colLayer2 
-        : Appearance.auroraEverywhere ? "transparent" : Appearance.colors.colLayer2
-    colBackgroundHover: Appearance.inirEverywhere ? Appearance.inir.colLayer2Hover 
-        : Appearance.auroraEverywhere ? Appearance.aurora.colSubSurface : Appearance.colors.colLayer2Hover
-    colBackgroundToggled: Appearance.inirEverywhere 
-        ? Appearance.inir.colPrimaryContainer
-        : Appearance.colors.colPrimary
-    colBackgroundToggledHover: Appearance.inirEverywhere 
-        ? Appearance.inir.colPrimaryContainerHover
-        : Appearance.colors.colPrimaryHover
-    colBackgroundToggledActive: Appearance.inirEverywhere 
-        ? Appearance.inir.colPrimaryContainerActive
-        : Appearance.colors.colPrimaryActive
-    buttonRadius: Appearance.inirEverywhere 
-        ? Appearance.inir.roundingSmall 
-        : (toggled ? Appearance.rounding.large : baseHeight / 2)
-    buttonRadiusPressed: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.normal
-    property color colText: Appearance.inirEverywhere
-        ? (toggled ? Appearance.inir.colOnPrimaryContainer : Appearance.inir.colText)
-        : Appearance.auroraEverywhere
-        ? (toggled ? Appearance.m3colors.m3onPrimary : Appearance.m3colors.m3onSurface)
-        : toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
-    property color colIcon: Appearance.inirEverywhere
-        ? (toggled ? Appearance.inir.colOnPrimaryContainer : Appearance.inir.colText)
-        : Appearance.auroraEverywhere
-        ? (toggled ? Appearance.m3colors.m3onPrimary : Appearance.m3colors.m3onSurface)
-        : toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
+    colBackground: Appearance.colors.colLayer2
+    colBackgroundToggled: (altAction && expandedSize) ? Appearance.colors.colLayer2 : Appearance.colors.colPrimary
+    colBackgroundToggledHover: (altAction && expandedSize) ? Appearance.colors.colLayer2Hover : Appearance.colors.colPrimaryHover
+    colBackgroundToggledActive: (altAction && expandedSize) ? Appearance.colors.colLayer2Active : Appearance.colors.colPrimaryActive
+    buttonRadius: toggled ? Appearance.rounding.large : height / 2
+    buttonRadiusPressed: Appearance.rounding.normal
+    property color colText: (toggled && !(altAction && expandedSize) && enabled) ? Appearance.colors.colOnPrimary : ColorUtils.transparentize(Appearance.colors.colOnLayer2, enabled ? 0 : 0.7)
+    property color colIcon: expandedSize ? ((root.toggled) ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer3) : colText
 
     onClicked: {
-        root.mainAction();
+        if (root.expandedSize && root.altAction) root.altAction();
+        else root.mainAction();
     }
 
-    contentItem: Item {
-        MaterialSymbol {
-            anchors.centerIn: parent
-            fill: root.toggled ? 1 : 0
-            iconSize: 24
-            color: root.colIcon
-            text: root.buttonIcon
+    contentItem: RowLayout {
+        id: contentItem
+        spacing: 4
+        anchors {
+            centerIn: root.expandedSize ? undefined : parent
+            fill: root.expandedSize ? parent : undefined
+            leftMargin: root.horizontalPadding
+            rightMargin: root.horizontalPadding
+        }
+
+        // Icon
+        MouseArea {
+            id: iconMouseArea
+            hoverEnabled: true
+            acceptedButtons: (root.expandedSize && root.altAction) ? Qt.LeftButton : Qt.NoButton
+            Layout.alignment: Qt.AlignHCenter
+            Layout.fillHeight: true
+            Layout.topMargin: root.verticalPadding
+            Layout.bottomMargin: root.verticalPadding
+            implicitHeight: iconBackground.implicitHeight
+            implicitWidth: iconBackground.implicitWidth
+            cursorShape: Qt.PointingHandCursor
+
+            onClicked: root.mainAction()
+
+            Rectangle {
+                id: iconBackground
+                anchors.fill: parent
+                implicitWidth: height
+                radius: root.radius - root.verticalPadding
+                color: {
+                    const baseColor = root.toggled ? Appearance.colors.colPrimary : Appearance.colors.colLayer3
+                    const transparentizeAmount = (root.altAction && root.expandedSize) ? 0 : 1
+                    return ColorUtils.transparentize(baseColor, transparentizeAmount)
+                }
+
+                Behavior on radius {
+                    animation: Appearance.animation.elementMove.numberAnimation.createObject(this)
+                }
+                Behavior on color {
+                    animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                }
+
+                MaterialSymbol {
+                    anchors.centerIn: parent
+                    fill: root.toggled ? 1 : 0
+                    iconSize: root.expandedSize ? 22 : 24
+                    color: root.colIcon
+                    text: root.buttonIcon
+                }
+
+                // State layer
+                Loader {
+                    anchors.fill: parent
+                    active: (root.expandedSize && root.altAction)
+                    sourceComponent: Rectangle {
+                        radius: iconBackground.radius
+                        color: ColorUtils.transparentize(root.colIcon, iconMouseArea.containsPress ? 0.88 : iconMouseArea.containsMouse ? 0.95 : 1)
+                        Behavior on color {
+                            animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Text column for expanded size
+        Loader {
+            Layout.alignment: Qt.AlignVCenter
+            Layout.fillWidth: true
+            visible: root.expandedSize
+            active: visible
+            sourceComponent: Column {
+                spacing: -2
+
+                StyledText {
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                    }
+                    font.pixelSize: Appearance.font.pixelSize.smallie
+                    font.weight: 600
+                    color: root.colText
+                    elide: Text.ElideRight
+                    text: root.name
+                }
+
+                StyledText {
+                    visible: root.statusText
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                    }
+                    font {
+                        pixelSize: Appearance.font.pixelSize.smaller
+                        weight: 100
+                    }
+                    color: root.colText
+                    elide: Text.ElideRight
+                    text: root.statusText
+                }
+            }
         }
     }
 
@@ -109,28 +188,26 @@ GroupButton {
 
         function toggleEnabled() {
             const index = root.buttonIndex;
-            const toggleList = Config.options?.sidebar?.quickToggles?.android?.toggles ?? [];
+            const toggleList = Config.options.sidebar.quickToggles.android.toggles;
             const buttonType = root.buttonData.type;
             if (!toggleList.find(toggle => toggle.type === buttonType)) {
                 toggleList.push({ type: buttonType, size: 1 });
             } else {
                 toggleList.splice(index, 1);
             }
-            Config.setNestedValue("sidebar.quickToggles.android.toggles", toggleList);
         }
 
         function toggleSize() {
             const index = root.buttonIndex;
-            const toggleList = Config.options?.sidebar?.quickToggles?.android?.toggles ?? [];
+            const toggleList = Config.options.sidebar.quickToggles.android.toggles;
             const buttonType = root.buttonData.type;
             if (!toggleList.find(toggle => toggle.type === buttonType)) return;
             toggleList[index].size = 3 - toggleList[index].size; // Alternate between 1 and 2
-            Config.setNestedValue("sidebar.quickToggles.android.toggles", toggleList);
         }
 
         function movePositionBy(offset) {
             const index = root.buttonIndex;
-            const toggleList = Config.options?.sidebar?.quickToggles?.android?.toggles ?? [];
+            const toggleList = Config.options.sidebar.quickToggles.android.toggles;
             const buttonType = root.buttonData.type;
             const targetIndex = index + offset;
             if (!toggleList.find(toggle => toggle.type === buttonType)) return;
@@ -138,7 +215,6 @@ GroupButton {
             const temp = toggleList[index];
             toggleList[index] = toggleList[targetIndex];
             toggleList[targetIndex] = temp;
-            Config.setNestedValue("sidebar.quickToggles.android.toggles", toggleList);
         }
 
         onReleased: (event) => {
@@ -153,7 +229,7 @@ GroupButton {
         }
         onWheel: (event) => {
             const index = root.buttonIndex;
-            const toggleList = Config.options?.sidebar?.quickToggles?.android?.toggles ?? [];
+            const toggleList = Config.options.sidebar.quickToggles.android.toggles;
             const buttonType = root.buttonData.type;
             if (event.angleDelta.y < 0) { // Move to right
                 movePositionBy(1);
@@ -162,5 +238,10 @@ GroupButton {
             }
             event.accepted = true;
         }
+    }
+
+    StyledToolTip {
+        extraVisibleCondition: root.tooltipText !== ""
+        text: root.tooltipText
     }
 }

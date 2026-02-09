@@ -8,8 +8,6 @@ import QtQuick.Layouts
 
 Item {
     id: root
-    clip: true
-
     Component.onCompleted: Notifications.ensureInitialized()
 
     NotificationListView { // Scrollable window
@@ -26,7 +24,7 @@ Item {
             maskSource: Rectangle {
                 width: listview.width
                 height: listview.height
-                radius: 0
+                radius: Appearance.inirEverywhere ? Appearance.inir.roundingSmall : Appearance.rounding.small
             }
         }
 
