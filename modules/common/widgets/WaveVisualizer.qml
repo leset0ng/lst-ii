@@ -11,9 +11,7 @@ Canvas { // Visualizer
     property real maxVisualizerValue: 1000
     property int smoothing: 2
     property bool live: true
-    property color color: Appearance.inirEverywhere ? Appearance.inir.colPrimary
-                        : Appearance.auroraEverywhere ? Appearance.m3colors.m3primary
-                        : Appearance.colors.colPrimary
+    property color color: Appearance.m3colors.m3primary
 
     onPointsChanged: () => {
         root.requestPaint()
@@ -49,7 +47,7 @@ Canvas { // Visualizer
         ctx.moveTo(0, h);
         for (var i = 0; i < n; ++i) {
             var x = i * w / (n - 1);
-            var y = h - (root.smoothPoints[i] / maxVal) * h * 0.9;
+            var y = h - (root.smoothPoints[i] / maxVal) * h;
             ctx.lineTo(x, y);
         }
         ctx.lineTo(w, h);
@@ -64,12 +62,12 @@ Canvas { // Visualizer
         ctx.fill();
     }
 
-    layer.enabled: Appearance.effectsEnabled
+    layer.enabled: true
     layer.effect: MultiEffect { // Blur a bit to obscure away the points
         source: root
         saturation: 0.2
-        blurEnabled: Appearance.effectsEnabled
+        blurEnabled: true
         blurMax: 7
-        blur: Appearance.effectsEnabled ? 1 : 0
+        blur: 1
     }
 }

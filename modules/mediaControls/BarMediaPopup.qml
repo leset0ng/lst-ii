@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Services.Mpris
+import Quickshell.Io
 import qs.modules.common
 import qs.modules.common.widgets
 import qs.modules.common.functions
@@ -21,7 +22,8 @@ Item {
     readonly property real widgetWidth: Appearance.sizes.mediaControlsWidth
     readonly property real widgetHeight: Appearance.sizes.mediaControlsHeight
     property real popupRounding: Appearance.rounding.normal
-    
+    property list<real> visualizerPoints: []
+
     // Cache to prevent flickering during track transitions
     property var _playerCache: []
     property bool _cacheValid: false
@@ -48,13 +50,31 @@ Item {
         }
     }
 
+    Process {
+        id: cavaProc
+        running: mediaControlsLoader.active
+        onRunningChanged: {
+            if (!cavaProc.running) {
+                root.visualizerPoints = [];
+            }
+        }
+        command: ["cava", "-p", `${FileUtils.trimFileProtocol(Directories.scriptPath)}/cava/raw_output_config.txt`]
+        stdout: SplitParser {
+            onRead: data => {
+                // Parse `;`-separated values into the visualizerPoints array
+                let points = data.split(";").map(p => parseFloat(p.trim())).filter(p => !isNaN(p));
+                root.visualizerPoints = points;
+            }
+        }
+    }
+
     implicitWidth: widgetWidth
     implicitHeight: playerColumn.implicitHeight
 
     ColumnLayout {
         id: playerColumn
         anchors.fill: parent
-        spacing: 8
+        spacing: 0
 
         Repeater {
             model: ScriptModel {
@@ -66,35 +86,19 @@ Item {
                 Layout.fillWidth: true
                 implicitWidth: root.widgetWidth
                 implicitHeight: root.widgetHeight + (isActive && (root._cacheValid ? root._playerCache : (root.meaningfulPlayers ?? [])).length > 1 ? 4 : 0)
-                
+
                 readonly property bool isActive: modelData === MprisController.trackedPlayer
-                
-                Rectangle {
-                    visible: (root._cacheValid ? root._playerCache : (root.meaningfulPlayers ?? [])).length > 1
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                    anchors.margins: Appearance.sizes.elevationMargin
-                    width: 3
-                    radius: 2
-                    color: isActive 
-                        ? ((Appearance.inirEverywhere && Appearance.inir) ? Appearance.inir.colPrimary : Appearance.colors.colPrimary)
-                        : ((Appearance.inirEverywhere && Appearance.inir) ? Appearance.inir.colLayer2 : Appearance.colors.colLayer2)
-                    
-                    Behavior on color {
-                        enabled: Appearance.animationsEnabled
-                        ColorAnimation { duration: 150 }
-                    }
-                }
-                
+
+
                 PlayerControl {
                     anchors.fill: parent
-                    anchors.leftMargin: (root._cacheValid ? root._playerCache : (root.meaningfulPlayers ?? [])).length > 1 ? 6 : 0
+                    anchors.margins: 0
                     player: modelData
-                    visualizerPoints: []
+                    visualizerPoints: root.visualizerPoints
                     radius: root.popupRounding
+                    selected: isActive && (root._cacheValid ? root._playerCache : (root.meaningfulPlayers ?? [])).length > 1
                 }
-                
+
                 MouseArea {
                     anchors.fill: parent
                     visible: !isActive && (root._cacheValid ? root._playerCache : (root.meaningfulPlayers ?? [])).length > 1

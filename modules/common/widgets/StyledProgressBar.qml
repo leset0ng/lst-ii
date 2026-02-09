@@ -28,7 +28,7 @@ ProgressBar {
     Behavior on value {
         animation: Appearance?.animation.elementMoveEnter.numberAnimation.createObject(this)
     }
-    
+
     background: Item {
         implicitHeight: valueBarHeight
         implicitWidth: valueBarWidth
@@ -77,7 +77,7 @@ ProgressBar {
                 color: root.highlightColor
             }
         }
-        
+
         Rectangle { // Right remaining part fill
             anchors.right: parent.right
             width: (1 - root.visualPosition) * parent.width - valueBarGap
@@ -85,7 +85,7 @@ ProgressBar {
             radius: height / 2
             color: root.trackColor
         }
-        
+
         Rectangle { // Stop point
             anchors.right: parent.right
             width: valueBarGap
